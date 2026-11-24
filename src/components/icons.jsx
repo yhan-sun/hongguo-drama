@@ -153,6 +153,12 @@ export const X = (p) => (
   </svg>
 );
 
+export const ChevronLeft = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
 export const ChevronRight = (p) => (
   <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
     <polyline points="9 18 15 12 9 6" />
@@ -390,3 +396,85 @@ export const Square = (p) => (
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
   </svg>
 );
+
+export const Sun = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+  </svg>
+);
+
+export const Moon = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+  </svg>
+);
+
+export const Dices = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <rect width="12" height="12" x="2" y="10" rx="2" ry="2" />
+    <path d="m17.92 14 3.5-3.5a2.41 2.41 0 0 0 0-3.41l-5.01-5.01a2.41 2.41 0 0 0-3.41 0l-3.5 3.5" />
+    <circle cx="6" cy="14" r="1" fill="currentColor" />
+    <circle cx="10" cy="18" r="1" fill="currentColor" />
+    <circle cx="15" cy="6" r="1" fill="currentColor" />
+  </svg>
+);
+
+export const Info = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4M12 8h.01" />
+  </svg>
+);
+
+export const Sliders = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <line x1="4" x2="4" y1="21" y2="14" />
+    <line x1="4" x2="4" y1="10" y2="3" />
+    <line x1="12" x2="12" y1="21" y2="12" />
+    <line x1="12" x2="12" y1="8" y2="3" />
+    <line x1="20" x2="20" y1="21" y2="16" />
+    <line x1="20" x2="20" y1="12" y2="3" />
+    <line x1="1" x2="7" y1="14" y2="14" />
+    <line x1="9" x2="15" y1="8" y2="8" />
+    <line x1="17" x2="23" y1="16" y2="16" />
+  </svg>
+);
+
+export const ArrowLeft = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <path d="m12 19-7-7 7-7M19 12H5" />
+  </svg>
+);
+
+export const ArrowRight = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+);
+
+export const MoreHorizontal = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+    <circle cx="5" cy="12" r="1" />
+  </svg>
+);
+
+export const Maximize2 = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <polyline points="15 3 21 3 21 9" />
+    <polyline points="9 21 3 21 3 15" />
+    <line x1="21" y1="3" x2="14" y2="10" />
+    <line x1="3" y1="21" x2="10" y2="14" />
+  </svg>
+);
+
+export const PanelRightClose = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M15 3v18" />
+    <path d="m8 9 3 3-3 3" />
+  </svg>
+);
+

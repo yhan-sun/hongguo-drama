@@ -43,3 +43,89 @@
 .history-child { margin-left: 32px; border-left: 2px solid var(--border); padding-left: 16px; }
 .history-completed { color: var(--accent); font-size: 12px; }
 @media (max-width: 600px) { .history-main { flex-wrap: wrap; } .history-row-actions { width: 100%; max-width: 100%; align-items: flex-start; } .history-group-actions, .history-maintenance-actions { justify-content: flex-start; } }
+
+
+/* 4.4 观看记录精简与样式 */
+.history-info-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  cursor: help;
+  transition: color 0.15s ease;
+}
+.history-info-badge:hover {
+  color: var(--text-primary);
+}
+
+.history-pill-count {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-left: 2px;
+}
+
+/* macOS 风格 Toggle Switch */
+.mac-switch-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.mac-switch-control input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.mac-switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  background-color: var(--border-color);
+  border-radius: 9999px;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mac-switch-slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mac-switch-control input:checked + .mac-switch-slider {
+  background-color: var(--accent);
+}
+.mac-switch-control input:checked + .mac-switch-slider::before {
+  transform: translateX(16px);
+}
+.mac-switch-label {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 进度细条 */
+.history-thin-track {
+  width: 100%;
+  max-width: 180px;
+  height: 3px;
+  background: var(--bg-inset);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.history-thin-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+}

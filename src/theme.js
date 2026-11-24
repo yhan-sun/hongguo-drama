@@ -42,6 +42,12 @@ export function setThemePreference(preference) {
   applyTheme(preference);
 }
 
+export function toggleThemePreference() {
+  const current = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  setThemePreference(current);
+  return current;
+}
+
 export function initializeTheme() {
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const refresh = () => applyTheme(getThemePreference());

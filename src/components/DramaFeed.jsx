@@ -1,7 +1,6 @@
-import { t, useLanguage, getLanguage } from '../i18n';
+import { t, useLanguage } from '../i18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Film, Play, RefreshCw } from './icons';
-import RandomDrama, { DramaPoster } from './RandomDrama';
+import { Film, Play, RefreshCw, Dices, Bookmark, Check, Sparkles } from './icons';
 import useMediaSources from './useMediaSources';
 import { mediaSourceLabel } from './mediaSourcesModel.mjs';
 import { feedCacheKey, readFeedCache, writeFeedCache } from './feedCache.mjs';
@@ -10,17 +9,12 @@ import './DramaFeed.css';
 
 const CATALOG_CHANNEL_KEY = 'hongguo.feed.catalog.channel.v1';
 const RANKINGS = [
-  ['hot-drama', '热播总榜'], ['hot-real-drama', '真人短剧'],
-  ['hot-comic-drama', '漫剧'], ['hot-ai-drama', 'AI 短剧'],
+  ['hot-drama', '热播总榜'],
+  ['hot-real-drama', '真人短剧'],
+  ['hot-comic-drama', '动态漫剧'],
+  ['hot-ai-drama', 'AI 短剧'],
 ];
 
-function clockOf(timestamp) {
-  if (!timestamp) return '';
-  const time = new Date(timestamp);
-  return Number.isNaN(time.getTime()) ? '' : time.toLocaleTimeString(getLanguage(), { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-// 先显示会话内上次片单，再后台更新；更新失败保留旧内容。只有“刷新片单”强制取最新。
 function DramaFeed({ active = true, onNavigate }) {
   useLanguage();
   const [source, setSource] = useState('hongguo');
@@ -31,30 +25,29 @@ function DramaFeed({ active = true, onNavigate }) {
   const { sources: mediaSources, revision, loading: sourcesLoading, error: sourcesError } = useMediaSources();
   const [category, setCategory] = useState('hot-drama');
   const [items, setItems] = useState(() => readFeedCache(feedCacheKey(revision, source, category, catalogChannel))?.items || []);
-  const [updatedAt, setUpdatedAt] = useState(() => readFeedCache(feedCacheKey(revision, source, category, catalogChannel))?.savedAt || 0);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [playError, setPlayError] = useState('');
-  const [randomRefresh, setRandomRefresh] = useState(0);
+  const [favorited, setFavorited] = useState(false);
+  const [favToast, setFavToast] = useState('');
+
   const listController = useRef(null);
   const playController = useRef(null);
   const selectedIdRef = useRef('');
   const itemsRef = useRef([]);
-  const revisionRef = useRef(revision);
+  const listPanelRef = useRef(null);
+
   const selected = items[index];
-  const random = category === 'random';
   const ranking = source === 'hongguo';
   const sourceLabel = mediaSourceLabel(source, mediaSources);
   itemsRef.current = items;
   selectedIdRef.current = selected ? String(selected.series_id) : '';
 
   const seedFeed = useCallback((nextSource, nextCategory, nextChannel = catalogChannel) => {
-    const cached = nextCategory === 'random' ? null : readFeedCache(feedCacheKey(revision, nextSource, nextCategory, nextChannel));
+    const cached = readFeedCache(feedCacheKey(revision, nextSource, nextCategory, nextChannel));
     setItems(cached?.items || []);
-    setUpdatedAt(cached?.savedAt || 0);
     setIndex(0);
   }, [revision, catalogChannel]);
 
@@ -68,40 +61,27 @@ function DramaFeed({ active = true, onNavigate }) {
   const switchFeed = (nextSource, nextCategory) => {
     if (source === nextSource && category === nextCategory) return;
     stopRequests();
-    setError(''); setNotice('');
-    setLoading(nextCategory !== 'random');
+    setError('');
+    setLoading(true);
     seedFeed(nextSource, nextCategory);
-    setSource(nextSource); setCategory(nextCategory);
-  };
-
-  const switchCatalogChannel = next => {
-    if (!['app', 'web'].includes(next) || next === catalogChannel) return;
-    stopRequests();
-    setError(''); setNotice(''); setLoading(true);
-    seedFeed(source, category, next);
-    setCatalogChannel(next);
-    try { localStorage.setItem(CATALOG_CHANNEL_KEY, next); } catch (_) { /* selection still works for this launch */ }
-  };
-
-  const cancelLoad = () => {
-    listController.current?.abort();
-    setLoading(false);
-    if (itemsRef.current.length) setNotice('已取消更新，仍显示上次片单。');
-    else setError('已取消加载，可以重试或切换来源。');
+    setSource(nextSource);
+    setCategory(nextCategory);
   };
 
   const loadList = useCallback(async (forceRefresh = false) => {
-    if (!active || random || sourcesLoading || !source) return;
+    if (!active || sourcesLoading || !source) return;
     if (!mediaSources.some(item => item.id === source)) return;
     const key = feedCacheKey(revision, source, category, catalogChannel);
     const cached = readFeedCache(key);
     if (!itemsRef.current.length && cached?.items?.length) {
-      setItems(cached.items); setUpdatedAt(cached.savedAt); setIndex(0);
+      setItems(cached.items);
+      setIndex(0);
     }
     listController.current?.abort();
     const controller = new AbortController();
     listController.current = controller;
-    setLoading(true); setError(''); setNotice('');
+    setLoading(true);
+    setError('');
     try {
       let nextItems;
       if (ranking) {
@@ -131,7 +111,6 @@ function DramaFeed({ active = true, onNavigate }) {
       writeFeedCache(key, nextItems, savedAt);
       const keepId = selectedIdRef.current;
       setItems(nextItems);
-      setUpdatedAt(savedAt);
       setIndex(() => {
         const found = keepId ? nextItems.findIndex(item => String(item.series_id) === keepId) : -1;
         return found >= 0 ? found : 0;
@@ -141,16 +120,7 @@ function DramaFeed({ active = true, onNavigate }) {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [active, random, sourcesLoading, source, category, catalogChannel, revision, ranking, mediaSources]);
-
-  // 来源配置被编辑后（revision 变化）旧片单不再可信，清空后按新 revision 重新取。
-  useEffect(() => {
-    if (revisionRef.current === revision) return;
-    revisionRef.current = revision;
-    stopRequests();
-    setItems([]); setUpdatedAt(0); setIndex(0);
-    setError(''); setNotice(''); setLoading(false);
-  }, [revision, stopRequests]);
+  }, [active, sourcesLoading, source, category, catalogChannel, revision, ranking, mediaSources]);
 
   useEffect(() => {
     if (sourcesLoading) return;
@@ -159,104 +129,310 @@ function DramaFeed({ active = true, onNavigate }) {
       if (next) {
         seedFeed(next, 'hot-drama');
         setLoading(true);
-        setSource(next); setCategory('hot-drama');
+        setSource(next);
+        setCategory('hot-drama');
       } else {
-        setItems([]); setUpdatedAt(0); setIndex(0); setLoading(false); setError(''); setNotice('');
+        setItems([]);
+        setIndex(0);
+        setLoading(false);
+        setError('');
       }
       return;
     }
-    if (active && !random) loadList();
-  }, [active, random, loadList, seedFeed, sourcesLoading, mediaSources, source]);
+    if (active) loadList();
+  }, [active, loadList, seedFeed, sourcesLoading, mediaSources, source]);
 
   useEffect(() => () => { listController.current?.abort(); playController.current?.abort(); }, []);
 
-  const startItem = async () => {
-    if (!active || !selected || resolving || sourcesLoading) return;
+  // 监听顶栏切换片源与目录线路事件
+  useEffect(() => {
+    const onChannelChange = (e) => {
+      if (e.detail && ['app', 'web'].includes(e.detail) && e.detail !== catalogChannel) {
+        setCatalogChannel(e.detail);
+        seedFeed(source, category, e.detail);
+      }
+    };
+    const onSourceChange = (e) => {
+      if (e.detail && e.detail !== source) {
+        switchFeed(e.detail, 'hot-drama');
+      }
+    };
+    const onRefresh = () => loadList(true);
+    window.addEventListener('catalog-channel-changed', onChannelChange);
+    window.addEventListener('media-source-changed', onSourceChange);
+    window.addEventListener('refresh-catalog-list', onRefresh);
+    return () => {
+      window.removeEventListener('catalog-channel-changed', onChannelChange);
+      window.removeEventListener('media-source-changed', onSourceChange);
+      window.removeEventListener('refresh-catalog-list', onRefresh);
+    };
+  }, [catalogChannel, source, category, seedFeed, loadList]);
+
+  // 键盘方向键 ↑ / ↓ 切换选中项
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!active || items.length === 0) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setIndex(idx => Math.max(0, idx - 1));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setIndex(idx => Math.min(items.length - 1, idx + 1));
+      } else if (e.key === 'Enter' && selected) {
+        e.preventDefault();
+        startItem();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [active, items.length, selected]);
+
+  const startItem = async (targetItem = selected) => {
+    if (!active || !targetItem || resolving || sourcesLoading) return;
     playController.current?.abort();
     const controller = new AbortController();
     playController.current = controller;
-    setPlayError(''); setResolving(true);
-    try { await playRecommendedDrama(window.electronAPI, selected, { signal: controller.signal }); }
-    catch (cause) { if (!controller.signal.aborted) setPlayError(cause.message || '加载失败，请重试本剧'); }
-    finally { if (!controller.signal.aborted) setResolving(false); }
+    setPlayError('');
+    setResolving(true);
+    try {
+      await playRecommendedDrama(window.electronAPI, targetItem, { signal: controller.signal });
+    } catch (cause) {
+      if (!controller.signal.aborted) setPlayError(cause.message || '加载失败，请重试本剧');
+    } finally {
+      if (!controller.signal.aborted) setResolving(false);
+    }
   };
 
-  const selectItem = next => {
-    if (resolving || next < 0 || next >= items.length) return;
-    setPlayError(''); setIndex(next);
+  const handlePickRandom = () => {
+    if (items.length <= 1) return;
+    let nextIdx = Math.floor(Math.random() * items.length);
+    if (nextIdx === index) nextIdx = (index + 1) % items.length;
+    setIndex(nextIdx);
+    // 滚动列表使选中的卡片可见
+    const targetElement = listPanelRef.current?.children[nextIdx];
+    targetElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
-  const introduction = selected?.intro || selected?.series_intro || selected?.description;
-  const upcoming = items.slice(index + 1, index + 5);
-  return <section className="drama-feed" aria-label={t("热播推荐")}>
-    <header className="drama-feed-header">
-      <div><h2>{t("热播推荐")}</h2><p className="page-description">{t("从热播榜和来源片单，遇见下一部故事。")}</p></div>
-      <div className="drama-feed-actions">
-        {!random && <label className="source-control">{t("来源")}<select className="input-field" aria-label={t("推荐来源")} value={source} onChange={event => switchFeed(event.target.value, 'hot-drama')}>
-          {mediaSources.map(({ id, label }) => <option key={id} value={id}>{id.startsWith('custom:') ? label : t(label)}</option>)}
-        </select></label>}
-        {ranking && !random && <label className="source-control">{t("目录线路")}<select className="input-field" aria-label={t("推荐目录线路")} value={catalogChannel} onChange={event => switchCatalogChannel(event.target.value)}><option value="app">{t("App（快速 · 部分片单）")}</option><option value="web">{t("官网（完整目录）")}</option></select></label>}
-        <button className="btn btn-outline" disabled={!random && (sourcesLoading || !source || (loading && !items.length))} onClick={() => random ? setRandomRefresh(value => value + 1) : loadList(true)}><RefreshCw size={15} />{t("刷新片单")}</button>
+  const handleToggleFavorite = () => {
+    setFavorited(v => !v);
+    setFavToast(!favorited ? '已添加到收藏' : '已取消收藏');
+    setTimeout(() => setFavToast(''), 2000);
+  };
+
+  const introduction = selected?.intro || selected?.series_intro || selected?.description || '暂无剧情简介。';
+  const top20Items = items.slice(0, 20);
+
+  return (
+    <section className="drama-rank-page" aria-label={t("热播榜单")}>
+      {/* 顶部单行分类 Tab + 右侧轻量「随机一部」与「刷新」按钮 */}
+      <header className="drama-rank-header">
+        <div className="drama-rank-tabs" role="tablist">
+          {ranking ? (
+            RANKINGS.map(([value, label]) => (
+              <button
+                key={value}
+                role="tab"
+                aria-selected={category === value}
+                className={`rank-category-tab ${category === value ? 'active' : ''}`}
+                onClick={() => switchFeed(source, value)}
+              >
+                {t(label)}
+              </button>
+            ))
+          ) : (
+            <button
+              className="rank-category-tab active"
+              onClick={() => switchFeed(source, 'hot-drama')}
+            >
+              {t("来源热播")}
+            </button>
+          )}
+        </div>
+
+        <div className="drama-rank-header-actions">
+          {/* 4.2 移至右侧的「随机一部」骰子按钮 */}
+          <button
+            className="btn btn-outline btn-sm dice-random-btn"
+            onClick={handlePickRandom}
+            disabled={loading || items.length <= 1}
+            title={t("随机挑选一部热播短剧")}
+          >
+            <Dices size={15} />
+            <span>{t("随机一部")}</span>
+          </button>
+          <button
+            className="btn btn-outline btn-sm rank-refresh-btn"
+            disabled={loading || sourcesLoading}
+            onClick={() => loadList(true)}
+            title={t("刷新当前榜单")}
+            aria-label={t("刷新片单")}
+          >
+            <RefreshCw size={13} className={loading ? 'spin' : ''} />
+            <span>{t("刷新")}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* 4.2 双栏沉浸布局（左 62% 选中大卡详情 + 右 38% Top20 紧凑榜单） */}
+      <div className="drama-rank-dual-layout">
+        {/* 左侧（62%）：当前选中剧集的大卡片详情（海报高斯模糊氛围光背景） */}
+        <div className="drama-rank-hero-pane">
+          {selected ? (
+            <div className="drama-hero-card">
+              {/* 海报高斯模糊氛围光背景 */}
+              {selected.cover && (
+                <div
+                  className="drama-hero-ambient-glow"
+                  style={{ backgroundImage: `url(${selected.cover})` }}
+                  aria-hidden="true"
+                />
+              )}
+
+              <div className="drama-hero-body">
+                {/* 榜单排名与热度徽标 */}
+                <div className="drama-hero-top-badges">
+                  <span className={`hero-rank-badge ${index === 0 ? 'rank-gold' : index === 1 ? 'rank-silver' : index === 2 ? 'rank-bronze' : ''}`}>
+                    {index < 3 ? `TOP ${index + 1}` : `#${index + 1}`}
+                  </span>
+                  {selected.heat && (
+                    <span className="hero-heat-badge">
+                      <Sparkles size={12} />
+                      {selected.heat}
+                    </span>
+                  )}
+                  {selected.episode_count > 0 && (
+                    <span className="hero-ep-badge">{t(`全 ${selected.episode_count} 集`)}</span>
+                  )}
+                </div>
+
+                <div className="drama-hero-content-row">
+                  {/* 大海报 */}
+                  <div className="drama-hero-poster-wrap">
+                    {selected.cover ? (
+                      <img src={selected.cover} alt={selected.series_title} className="drama-hero-poster" />
+                    ) : (
+                      <div className="drama-hero-poster-fallback"><Film size={36} /></div>
+                    )}
+                  </div>
+
+                  {/* 剧集详情信息 */}
+                  <div className="drama-hero-info">
+                    <h2 className="drama-hero-title">{selected.series_title}</h2>
+
+                    {selected.tags && selected.tags.length > 0 && (
+                      <div className="drama-hero-tags">
+                        {selected.tags.slice(0, 4).map((tag, i) => (
+                          <span key={i} className="hero-genre-tag">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="drama-hero-intro-text">
+                      <p>{introduction}</p>
+                    </div>
+
+                    {/* 主按钮「立即播放」+ 次按钮「收藏」 */}
+                    <div className="drama-hero-actions">
+                      <button
+                        className="btn btn-primary btn-hero-play"
+                        disabled={resolving}
+                        onClick={() => startItem()}
+                      >
+                        <Play size={18} />
+                        <span>{t(resolving ? '正在准备播放…' : '立即播放')}</span>
+                      </button>
+                      <button
+                        className={`btn btn-outline btn-hero-fav ${favorited ? 'active' : ''}`}
+                        onClick={handleToggleFavorite}
+                        title={t("收藏到我的剧库")}
+                      >
+                        <Bookmark size={16} />
+                        <span>{t(favorited ? '已收藏' : '收藏')}</span>
+                      </button>
+                      {favToast && <span className="hero-fav-toast" role="status">{favToast}</span>}
+                    </div>
+
+                    {playError && <div className="alert alert-error mt8">{t(playError)}</div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="drama-hero-empty" role="status">
+              {loading ? (
+                <div className="hero-loading-spinner">
+                  <RefreshCw size={28} className="spin" />
+                  <p>{t("正在加载热播榜单…")}</p>
+                </div>
+              ) : (
+                <div className="hero-empty-notice">
+                  <Film size={36} />
+                  <p>{t(error || "暂无榜单数据，请刷新后重试。")}</p>
+                  <button className="btn btn-primary btn-sm" onClick={() => loadList(true)}>{t("重新加载")}</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 右侧（38%）：Top 20 紧凑可滚动榜单列表 */}
+        <div className="drama-rank-list-pane">
+          <div className="rank-list-header">
+            <span className="rank-list-title">{t("榜单 Top 20")}</span>
+            <span className="rank-list-sub">{t("↑ ↓ 键盘选择 · 双击播放")}</span>
+          </div>
+
+          <div className="rank-list-scrollable" ref={listPanelRef}>
+            {top20Items.map((item, idx) => {
+              const isSelected = idx === index;
+              const isTop3 = idx < 3;
+              const rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : '';
+
+              return (
+                <div
+                  key={item.series_id}
+                  className={`rank-item-row ${isSelected ? 'active' : ''}`}
+                  onClick={() => setIndex(idx)}
+                  onDoubleClick={() => startItem(item)}
+                  role="button"
+                  tabIndex={0}
+                  aria-selected={isSelected}
+                  title={t(`点击预览《${item.series_title}》，双击播放`)}
+                >
+                  <span className={`rank-item-number ${isTop3 ? rankClass : ''}`}>
+                    {idx + 1}
+                  </span>
+
+                  <div className="rank-item-thumb">
+                    {item.cover ? (
+                      <img src={item.cover} alt="" loading="lazy" />
+                    ) : (
+                      <div className="thumb-fallback"><Film size={14} /></div>
+                    )}
+                  </div>
+
+                  <div className="rank-item-meta">
+                    <span className="rank-item-title">{item.series_title}</span>
+                    <span className="rank-item-sub">
+                      {item.episode_count ? t(`${item.episode_count} 集`) : ''}
+                      {item.heat ? ` · ${item.heat}` : ''}
+                    </span>
+                  </div>
+
+                  {isSelected && (
+                    <div className="rank-item-active-play" aria-hidden="true">
+                      <Play size={13} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </header>
-    <div className="drama-feed-categories" role="group" aria-label={t("选择推荐方式")}>
-      {ranking ? RANKINGS.map(([value, label]) => <button key={value} className={`browse-cat ${category === value ? 'active' : ''}`}
-        aria-pressed={category === value} onClick={() => switchFeed(source, value)}>{t(label)}</button>)
-        : <button className={`browse-cat ${!random ? 'active' : ''}`} aria-pressed={!random} onClick={() => switchFeed(source, 'hot-drama')}>{t("来源片单")}</button>}
-      <button className={`browse-cat drama-random-tab ${random ? 'active' : ''}`} aria-pressed={random} onClick={() => switchFeed(source, 'random')}>{t("摇一摇")}</button>
-    </div>
-    {random ? <RandomDrama active={active} refreshKey={randomRefresh} onNavigate={onNavigate} /> : <>
-      {sourcesError && <p className="drama-feed-hint" role="status">{t("来源列表更新失败，暂用上次列表；可在设置重新保存来源后重试。")}</p>}
-      <div className="drama-feed-list-meta"><p>{t(ranking ? catalogChannel === 'app' ? '红果 App 热播榜' : '红果官网热播榜' : `${sourceLabel} · 来源片单`)}{t(items.length > 0 ? ` · 本次 ${items.length} 部` : '')}</p><span>{t(ranking ? '按来源榜单顺序' : '按来源目录顺序，不代表热播排名')}</span></div>
-      {ranking && catalogChannel === 'app' && <p className="drama-feed-hint" role="status">{t("快速线路只显示部分片单；需要更完整的榜单时，可在“目录线路”切换到官网。")}</p>}
-      {(loading || sourcesLoading) && items.length === 0 && <div className="drama-feed-state" role="status"><RefreshCw size={24} className="spin" /><p>{t(sourcesLoading ? '正在加载来源列表…' : '正在加载真实片单…')}</p>
-        {loading && !sourcesLoading && <button className="btn btn-outline" onClick={cancelLoad}>{t("取消加载")}</button>}
-      </div>}
-      {loading && items.length > 0 && <div className="drama-feed-updating" role="status"><RefreshCw size={16} className="spin" /><span>{t("正在更新片单，仍可浏览上次结果…")}</span>
-        <button className="btn btn-outline btn-sm" onClick={cancelLoad}>{t("取消加载")}</button>
-      </div>}
-      {notice && items.length > 0 && <p className="drama-feed-notice" role="status">{t(notice)}</p>}
-      {error && items.length > 0 && <div className="drama-feed-update-error" role="alert">
-        <span>{t("片单未更新：")}{t(error)}{t(updatedAt ? `（仍显示 ${clockOf(updatedAt)} 的片单）` : '')}</span>
-        <button className="btn btn-outline btn-sm" disabled={loading} onClick={() => loadList(true)}>{t("重试")}</button>
-      </div>}
-      {!loading && !sourcesLoading && !selected && <div className="drama-feed-state" role={error ? 'alert' : 'status'}>
-        <Film size={32} /><h3>{t(error ? '暂时没能加载片单' : !source ? '暂无启用的来源，请在设置中添加' : '这个来源暂未返回剧集')}</h3>
-        {error && <p>{t(error)}</p>}
-        <p>{t(ranking ? '可在上方切换目录线路或来源，继续发现短剧。' : '可在上方切换来源，继续发现短剧。')}</p>
-        <div className="drama-feed-actions"><button className="btn btn-primary" disabled={!source} onClick={() => loadList(true)}>{t("重新加载")}</button>
-          {onNavigate && <button className="btn btn-outline" onClick={() => onNavigate('download')}>{t("按剧名搜索")}</button>}</div>
-      </div>}
-      {selected && <>
-        <div className="drama-feed-feature">
-          <DramaPoster item={selected} />
-          <div className="drama-feed-copy">
-            <p className="drama-feed-rank">{t(ranking && selected.rank > 0 ? `榜单第 ${selected.rank} 名` : `本次片单第 ${index + 1} 部`)}{t(ranking && selected.heat ? ` · ${selected.heat}` : '')}</p>
-            <h3>{selected.series_title}</h3>
-            <p className="drama-feed-tags">{[selected.episode_count > 0 && t('{0} 集', [selected.episode_count]), ...(selected.tags || [])].filter(Boolean).join(' · ') || t('来自{0}片单', [sourceLabel])}</p>
-            {typeof introduction === 'string' && introduction.trim() && <p className="drama-feed-intro">{introduction}</p>}
-            <p className="drama-feed-play-note">{t("在「我的剧库」选集、播放，接着上次继续看。")}</p>
-            <div className="drama-feed-actions"><button className="btn btn-primary" disabled={resolving} onClick={startItem}><Play size={16} />{t(resolving ? '正在打开剧库…' : '在剧库播放')}</button>
-              {resolving && <button className="btn btn-outline" onClick={() => { playController.current?.abort(); setResolving(false); setPlayError('已取消加载，可重试本剧。'); }}>{t("取消加载")}</button>}</div>
-            {playError && <p className="drama-inline-error" role="alert">{t(playError)}</p>}
-          </div>
-        </div>
-        <div className="drama-feed-navigation">
-          <span aria-live="polite">{t("第 {0} / {1} 部", [index + 1, items.length])}</span>
-          <div className="drama-feed-actions" role="group" aria-label={t("切换推荐短剧")}>
-            <button className="btn btn-outline" disabled={index === 0 || resolving} onClick={() => selectItem(index - 1)}>{t("上一部")}</button>
-            <button className="btn btn-outline" disabled={index === items.length - 1 || resolving} onClick={() => selectItem(index + 1)}>{t("下一部")}</button>
-          </div>
-        </div>
-        {upcoming.length > 0 ? <div className="drama-feed-upcoming"><h4>{t("接下来看看")}</h4><div className="drama-feed-upcoming-list">
-          {upcoming.map((item, offset) => <button key={item.series_id} className="drama-feed-next" disabled={resolving} onClick={() => selectItem(index + offset + 1)}>
-            <DramaPoster item={item} /><span><strong>{item.series_title}</strong><small>{t(ranking && item.rank > 0 ? `榜单第 ${item.rank} 名` : `片单第 ${index + offset + 2} 部`)}</small></span>
-          </button>)}
-        </div></div> : <p className="drama-feed-hint">{t("已到本次片单末尾，换个来源，或摇一摇发现新故事。")}</p>}
-        <p className="drama-feed-source">{t(ranking ? `榜单来自${catalogChannel === 'app' ? '红果 App 目录' : '红果官网公开页面'}，不是账号个性化推荐。` : `片单来自${sourceLabel}当前目录，不代表热播排名；播放以来源实际可用分集为准。`)}</p>
-      </>}
-    </>}
-  </section>;
+    </section>
+  );
 }
 
 export default DramaFeed;

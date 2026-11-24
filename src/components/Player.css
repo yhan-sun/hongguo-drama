@@ -754,3 +754,488 @@
 .player-header .player-header-right .btn { width: 100%; min-width: 0; min-height: 36px; padding: 6px 8px; font-size: 12px; gap: 7px; justify-content: center; white-space: normal; }
 .player-header-right .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 .player-header-right .series-count { font-size: inherit; min-width: 0; padding: 0 .35em; }
+
+
+/* 4.3 顶部极简标题条（高 44px） */
+.player-top-clean-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+  gap: 12px;
+}
+.player-top-clean-bar[hidden] {
+  display: none;
+}
+.player-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.player-back-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.player-back-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+.player-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.player-bar-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+.btn-series-picker-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.btn-series-picker-tag:hover, .btn-series-picker-tag.open {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.player-ep-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.player-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.player-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+.player-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.player-action-btn.active-fav {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: rgba(217, 56, 58, 0.3);
+}
+.player-action-btn.active-cinema {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.player-action-btn.active-wide {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: rgba(217, 56, 58, 0.3);
+}
+
+/* ⚙️ 播放设置 Popover */
+.player-settings-container {
+  position: relative;
+}
+.player-settings-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 300px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 14px;
+  z-index: 100;
+  animation: popover-in 0.15s ease-out;
+}
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.settings-popover-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-muted);
+}
+.settings-popover-header h4 {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text-primary);
+  margin: 0;
+}
+.settings-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-popover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.settings-popover-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.settings-popover-item .input-field {
+  flex: 1;
+  max-width: 170px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.settings-popover-divider {
+  height: 1px;
+  background: var(--border-muted);
+  margin: 4px 0;
+}
+.settings-popover-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 2px 0;
+}
+.settings-popover-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.settings-popover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.settings-popover-actions .btn {
+  justify-content: center;
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+/* 4.3 播放主视口布局与选集抽屉 */
+.player-viewing-layout {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  width: 100%;
+}
+.player-floating-slot {
+  flex: 1;
+  min-width: 0;
+}
+.player-stage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.player-episode-panel {
+  width: 310px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  max-height: 580px;
+  overflow: hidden;
+}
+.player-container.episodes-collapsed .player-episode-panel,
+.player-episode-panel.collapsed {
+  display: none !important;
+}
+
+/* 选集抽屉内部 */
+.drawer-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-muted);
+}
+.drawer-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.drawer-stat-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.drawer-stat-value {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.batch-download-container {
+  position: relative;
+}
+.btn-xs {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.batch-download-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.batch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.batch-item:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+.batch-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.batch-dropdown-divider {
+  height: 1px;
+  background: var(--border-muted);
+  margin: 3px 0;
+}
+.batch-merge-item {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 正在播放紧凑标签 */
+.player-now-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-inset);
+  border-radius: 8px;
+  min-width: 0;
+}
+.player-now-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--accent);
+  animation: pulse-dot 1.8s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.player-now-text {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-now-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-muted);
+  white-space: nowrap;
+}
+.player-now-badge.status-completed {
+  color: var(--success);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.player-now-badge.status-downloading {
+  color: var(--accent);
+  border-color: rgba(217, 56, 58, 0.3);
+}
+
+/* 分页滑块 Tab */
+.drawer-chunk-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.drawer-chunk-tab {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.drawer-chunk-tab:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+.drawer-chunk-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 5列紧凑数字宫格 */
+.player-ep-grid-5col {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px;
+  max-height: 400px;
+  scrollbar-width: thin;
+}
+.ep-chip-5col {
+  position: relative;
+  aspect-ratio: 1;
+  height: auto;
+  min-height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.ep-chip-5col:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.ep-chip-5col.ep-current {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(217, 56, 58, 0.35);
+}
+.ep-chip-5col.ep-watched:not(.ep-current) {
+  opacity: 0.6;
+  background: var(--bg-inset);
+}
+.ep-chip-5col .ep-lock-mark {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 8px;
+  opacity: 0.7;
+}
+.ep-chip-5col .ep-cached-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.player-drawer-tips {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding-top: 4px;
+}

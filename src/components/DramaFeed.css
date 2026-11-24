@@ -48,3 +48,254 @@
 @media (max-width: 980px) { .drama-feed-feature { gap: 24px; padding: 24px; } .drama-feed-feature > .drama-poster { width: 158px; } .drama-feed-upcoming-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; } }
 @media (max-width: 600px) { .drama-feed-header { align-items: flex-start; gap: 12px; flex-wrap: wrap; } .drama-feed-categories .drama-random-tab { margin-left: 0; } .drama-feed-feature { align-items: flex-start; padding: 18px; gap: 18px; } .drama-feed-feature > .drama-poster { width: 112px; } .drama-feed-play-note { margin-top: 16px; } .drama-feed-list-meta { flex-wrap: wrap; gap: 4px; } }
 @media (max-width: 400px) { .drama-feed-feature { flex-direction: column; align-items: center; } .drama-feed-copy { width: 100%; } .drama-feed-feature > .drama-poster { width: 145px; } .drama-feed-upcoming-list { gap: 16px; } }
+
+
+/* 4.2 热播榜单双栏联动布局 */
+.drama-rank-dual-layout {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  min-height: 520px;
+  margin-top: 20px;
+}
+.drama-hero-card {
+  flex: 62;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.drama-hero-glow {
+  position: absolute;
+  inset: -20px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(48px) saturate(180%);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 1;
+}
+.drama-hero-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 24px;
+  padding: 28px;
+  height: 100%;
+  box-sizing: border-box;
+}
+.drama-hero-poster-wrap {
+  position: relative;
+  width: 200px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 3/4;
+  box-shadow: var(--shadow-md);
+  background: var(--bg-inset);
+}
+.drama-hero-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.drama-hero-badge-float {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+}
+.drama-hero-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.drama-hero-rank-heat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.drama-hero-rank-pill {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+.drama-hero-heat {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.drama-hero-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.drama-hero-tags {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+.drama-hero-intro {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  margin-bottom: 20px;
+}
+.drama-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+.btn-hero-play {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-hero-fav {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-hero-fav.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* 右侧 Top 20 榜单列表 */
+.drama-rank-sidebar {
+  flex: 38;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  max-height: 580px;
+}
+.rank-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-muted);
+  margin-bottom: 8px;
+}
+.rank-sidebar-header h4 {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-primary);
+  margin: 0;
+}
+.rank-list-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+.rank-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+.rank-item-row:hover {
+  background: var(--bg-hover);
+}
+.rank-item-row.active {
+  background: var(--accent-soft);
+}
+.rank-num {
+  font-size: 13px;
+  font-weight: 700;
+  width: 22px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.rank-num.top-1 { color: #f59e0b; font-size: 14px; }
+.rank-num.top-2 { color: #9ca3af; font-size: 14px; }
+.rank-num.top-3 { color: #b45309; font-size: 14px; }
+.rank-thumb {
+  width: 32px;
+  height: 42px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-inset);
+}
+.rank-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rank-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-item-stat {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .drama-rank-dual-layout {
+    flex-direction: column;
+  }
+  .drama-hero-card {
+    flex: none;
+  }
+  .drama-rank-sidebar {
+    flex: none;
+    max-height: 400px;
+  }
+}

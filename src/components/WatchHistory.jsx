@@ -1,6 +1,6 @@
 import { t, useLanguage, getLanguage } from '../i18n';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Play, RefreshCw, Clock } from './icons';
+import { Play, RefreshCw, Clock, Info, Trash2 } from './icons';
 import './WatchHistory.css';
 import { groupHistory, historyGroupSuggestions } from './historyGroups.mjs';
 
@@ -188,23 +188,32 @@ export default function WatchHistory({ active = true, onNavigate }) {
         <button className="btn btn-outline" onClick={checkUpdates} disabled={checking || !!checkingRow || loading || !rows.length}>
           <RefreshCw size={15} className={checking ? 'spin' : ''} />{t(checking ? '正在检查更新…' : '检查更新')}
         </button>
+        <span
+          className="history-info-badge"
+          title={t("运行期间自动检查新集；批量检测范围只决定本次检查哪些记录，不会隐藏记录或清除已有红点。同组续作和疑似同剧汇总到组头。可在设置中调整通知。")}
+        >
+          <Info size={15} />
+        </span>
       </div>
     </div>
-    <p className="history-hint">{t("运行期间自动检查新集；同一部剧的多个季会共用一次续作搜索，已看完的低季每 24 小时检测一次。不同剧号的新一季标为“疑似续作”。批量检测范围只决定本次检查哪些记录，不会隐藏记录或清除已有红点。同组续作和疑似同剧汇总到组头，子级红点仅表示新增分集。可在设置中关闭检测或开启系统通知。")}</p>
     <div className="history-filter-bar">
       <div className="history-filter" role="group" aria-label={t("观看进度筛选")}>
         {[
           ['all', '全部', listedRows.length],
           ['unfinished', '未看完', listedRows.length - completedCount],
           ['completed', '已看完', completedCount],
-        ].map(([value, label, count]) => <button key={value} type="button" aria-pressed={filter === value} disabled={loading} onClick={() => setFilter(value)}>{t(label)} {t(count)}</button>)}
+        ].map(([value, label, count]) => (
+          <button key={value} type="button" aria-pressed={filter === value} disabled={loading} onClick={() => setFilter(value)}>
+            {t(label)} <span className="history-pill-count">{count}</span>
+          </button>
+        ))}
       </div>
-      <label className="history-display-option" title={t("只调整当前列表；批量检测范围不变，也不会删除记录")}>
+      <label className="mac-switch-control" title={t("只调整当前列表；批量检测范围不变，也不会删除记录")}>
         <input type="checkbox" checked={hideLowSeasons} disabled={loading} onChange={event => savePreferences({ ...preferences, hideLowSeasons: event.target.checked })} />
-        <span>{t("折叠同剧低季")}</span>
+        <span className="mac-switch-slider" />
+        <span className="mac-switch-label">{t("折叠同剧低季")}</span>
       </label>
     </div>
-    <p className="history-hint">{t("按最近观看时间排序，检查更新不改变观看顺序。同组提醒汇总到首个可见记录。")}{t("按当前最后一集的片尾进度判断；隐藏低季后，计数仅代表列表中的季，旧记录可能显示未看完。")}</p>
     {error && <div className="history-error" role="alert"><span>{t(error)}</span><button className="btn btn-outline btn-sm" onClick={load}>{t("重新加载")}</button></div>}
     {status && <p className="history-hint" role="status">{t(status)}</p>}
     {checking && progress?.total > 0 && <p className="history-hint" role="status">{t("正在检查 ")}{t((progress.checked || 0) + (progress.failed || 0) + (progress.skipped || 0))} / {t(progress.total)}{t(progress.current ? `：${progress.current}` : '')}
@@ -221,17 +230,25 @@ export default function WatchHistory({ active = true, onNavigate }) {
       const isHead = visibleRows.find(item => groupById.get(item.series_id) === group) === row;
       const { sequels, similarSeries: similar, hasUnreadSequels } = suggestionsByGroup.get(group);
       const hasUpdates = row.unreadEpisodes > 0 || (isHead && hasUnreadSequels);
+      const progressPercent = row.total > 0 ? Math.min(100, Math.max(3, (row.vid_index / row.total) * 100)) : 10;
       return <li className={`history-row ${!isHead ? 'history-child' : ''}`} key={row.series_id}>
       <div className="history-main">
       <button className="history-resume" onClick={() => resume(row)} disabled={!active || !!opening || !!removing} aria-label={t(`继续观看 ${row.series_title} 第${row.vid_index}集${hasUpdates ? `，有更新${row.unreadEpisodes ? `，新增${row.unreadEpisodes}集` : '，发现疑似续作'}` : ''}`)}>
         {row.cover ? <img className="history-cover" src={row.cover} alt="" loading="lazy" /> : <span className="history-cover history-cover-empty"><Play size={20} /></span>}
         <span className="history-copy">
           <span className="history-name">{hasUpdates && <span className="history-dot" role="img" aria-label={t("有更新")} />}{row.series_title}</span>
-          <span className="history-progress">{t("看到第 ")}{t(row.vid_index)}{t(" 集 / 共 ")}{t(row.total)}{t(" 集 · ")}{t(Math.floor((row.currentTime || 0) / 60))}:{t(String(Math.floor((row.currentTime || 0) % 60)).padStart(2, '0'))}</span>
+          <span className="history-progress">
+            {t("看到第 {0} 集", [row.vid_index])}
+            {row.total > 0 ? t(" / 共 {0} 集", [row.total]) : ''}
+            {` · ${Math.floor((row.currentTime || 0) / 60)}:${String(Math.floor((row.currentTime || 0) % 60)).padStart(2, '0')}`}
+          </span>
           <span className="history-time">{t("最近观看 ")}{t(new Date(row.updatedAt).toLocaleString(getLanguage(), { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }))}{row.completed && <span className="history-completed">{t(" · 已看完")}</span>}</span>
           {t(decisions[row.series_id] === null ? <span className="history-group-state">{t("独立显示 · 手动")}</span> : group.length > 1 && group.some(item => Object.hasOwn(decisions, item.series_id)) && <span className="history-group-state">{t("手动分组")}</span>)}
           {row.unreadEpisodes > 0 && <span className="history-update">{t("新增 ")}{t(row.unreadEpisodes)}{t(" 集")}</span>}
         </span>
+        <div className="history-thin-track">
+          <div className="history-thin-bar" style={{ width: `${progressPercent}%` }} />
+        </div>
         <span className="history-action"><Play size={15} />{t(opening === row.series_id ? '打开中…' : '继续观看')}</span>
       </button>
       <div className="history-row-actions">
