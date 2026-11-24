@@ -349,14 +349,14 @@ function SearchPanel({ onSelectSeries, onViewSeries, onSwitchToInput, active = t
       <datalist id="local-search-suggestions">
         {suggestions.map(({ term, source: origin }) => <option key={term} value={term} label={origin} />)}
       </datalist>
-      <p className="settings-hint search-suggestions-hint" id="search-suggestions-hint">{t("本机联想：匹配搜索历史和本次浏览过的真实剧名。")}</p>
+      <p className="settings-hint search-suggestions-hint" id="search-suggestions-hint">{t("根据搜索历史与最近浏览智能推荐。")}</p>
       {history.length > 0 && <div className="search-history">
-        <div className="search-history-heading"><span>{t("本机搜索历史")}</span><button type="button" className="btn-chip" onClick={clearHistory}>{t("清除历史")}</button></div>
+        <div className="search-history-heading"><span>{t("最近搜索")}</span><button type="button" className="btn-chip" onClick={clearHistory}>{t("清除历史")}</button></div>
         <div className="search-history-terms">{history.map((term) => <span className="search-history-term" key={term}><button type="button" className="btn-chip" title={term} onClick={() => { changeKeyword(term); inputRef.current?.focus(); }}>{term}</button><button type="button" className="search-history-remove" aria-label={t(`删除搜索历史：${term}`)} title={t("删除这条搜索历史")} onClick={() => removeHistory(term)}>×</button></span>)}</div>
       </div>}
       {historyError && <p className="search-history-error" role="alert">{t(historyError)}</p>}
       <p className="settings-hint" style={{ marginTop: 8 }}>
-        {t(onViewSeries ? '点海报直接播放；详情与下载可单独打开。' : source === 'all' ? '同时搜索所有已启用来源，结果标明来源；选择一部即可查看全部剧集。' : '按剧名查找，选择一部即可查看全部剧集。')}
+        {t(onViewSeries ? '点击海报即可开始播放；也可查看分集详情与下载。' : '输入剧名，选择一部即可开始观看。')}
       </p>
 
       {results === null && !loading && !error && (

@@ -48,9 +48,9 @@ export default function CastPanel({ seriesId, episode, title, videoRef }) {
         <strong>{t("电视投屏")}</strong>
         <button className="btn btn-outline btn-sm" onClick={()=>setOpen(false)}>{t("关闭")}</button>
       </div>
-      <p>{t("电脑与电视连接同一局域网，电视需开启 DLNA。投屏前会缓存本集；格式支持取决于电视。")}</p>
+      <p>{t("请确保电脑与电视连接在同一 Wi-Fi 网络，并开启电视的投屏或 DLNA 功能。")}</p>
       <button className="btn btn-outline btn-sm" disabled={busy} onClick={scan}>{t(busy?'正在处理…':'重新搜索电视')}</button>
-      {!busy && !devices.length && <p>{t("未发现电视，请检查电视的投屏设置和电脑防火墙。")}</p>}
+      {!busy && !devices.length && <p>{t("未发现可用设备，请确保电视已开机并处于同一网络。")}</p>}
       {devices.map(device=><button className="btn btn-outline btn-sm" disabled={busy} key={device.id} onClick={()=>start(device.id)}>{device.name}</button>)}
       {busy && <button className="btn btn-outline btn-sm" onClick={cancel}>{t("取消本次操作")}</button>}
       {target && <div role="group" aria-label={t("投屏控制")}>{[['Play','播放'],['Pause','暂停'],['Stop','停止']].map(([action,label])=><button className="btn btn-outline btn-sm" key={action} disabled={busy} onClick={()=>control(action)}>{t(label)}</button>)}</div>}

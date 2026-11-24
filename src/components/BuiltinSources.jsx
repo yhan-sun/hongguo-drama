@@ -26,7 +26,7 @@ export default function BuiltinSources() {
       <span>{t(label)}<em>{t(id === 'hongguo' ? '默认来源，固定开启' : sources.some(source => source.id === id) ? '已开启' : '已关闭')}</em></span>
       <input type="checkbox" role="switch" aria-label={t('{0}来源', [t(label).replace('短剧', '')])} aria-describedby="builtin-sources-hint" checked={id === 'hongguo' || sources.some(source => source.id === id)} disabled={id === 'hongguo' || loading || saving || !!loadError} onChange={event => toggle(id, event.target.checked)} />
     </label>)}
-    {!['android', 'ios'].includes(window.electronAPI.platform) && <p className="settings-hint">{t("海外来源默认关闭，仅提供官网公开播放内容。DramaBox 已验证真实搜索、分集和免费整集；部分网络需让官网与官方 CDN 在现有网络工具中走代理。ReelShort 仍为实验来源。")}</p>}
+    {!['android', 'ios'].includes(window.electronAPI.platform) && <p className="settings-hint">{t("海外来源默认关闭。开启后可搜索与观看公开短剧内容；若加载缓慢可配合网络代理使用。")}</p>}
     {saving && <p className="settings-hint" role="status">{t("正在保存…")}</p>}
     {(error || loadError) && <p className="appearance-error" role="alert">{t(error || loadError)}</p>}
     {loadError && <button type="button" className="btn btn-outline btn-sm" disabled={loading} onClick={notifyMediaSourcesChanged}>{t("重新读取来源")}</button>}

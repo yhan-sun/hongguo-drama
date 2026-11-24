@@ -38,14 +38,14 @@ export default function ReleaseCalendar({ onPlay, opening = '', active = true })
   </li>;
 
   return <section className="release-calendar">
-    <header><h2>{t("上新日历")}</h2><p className="page-description">{t("已浏览剧集的首次公开日历。打开剧集的「公开剧评」后，真实日期会保存在这里。")}</p></header>
-    <p className="release-coverage">{t("本机收录 ")}{t(rows.length)}{t(" 部 · 有公开日期 ")}{t(dated.length)}{t(" 部")}{t(dated.length > 0 ? ` · ${dated[dated.length - 1].date} 至 ${dated[0].date}` : '')}{t("。按北京时间显示，不是完整上新排期。")}</p>
+    <header><h2>{t("上新日历")}</h2><p className="page-description">{t("已追短剧的上线时间表，方便掌握更新动态。")}</p></header>
+    <p className="release-coverage">{t("已收录 ")}{t(rows.length)}{t(" 部短剧")}{t(dated.length > 0 ? ` · 记录范围：${dated[dated.length - 1].date} 至 ${dated[0].date}` : '')}</p>
     {library.error && <div className="release-error" role="alert"><p>{t(library.error)}</p><button type="button" className="btn btn-sm" onClick={() => setLibrary(readLocalLibrary())}>{t("重新读取")}</button></div>}
     <div className="release-toolbar">
-      <div className="release-filter" role="group" aria-label={t("日历范围")}><button type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>{t("全部已浏览")}</button><button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}>{t("本机收藏 ")}{t(favoritesCount)}</button></div>
+      <div className="release-filter" role="group" aria-label={t("日历范围")}><button type="button" aria-pressed={!favoritesOnly} onClick={() => setFavoritesOnly(false)}>{t("全部已浏览")}</button><button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(true)}>{t("我的收藏 ")}{t(favoritesCount)}</button></div>
       {months.length > 0 && <label className="release-month">{t("月份")}<select value={month} onChange={event => setChosenMonth(event.target.value)}>{months.map(value => <option key={value} value={value}>{t(value.slice(0, 4))}{t(" 年 ")}{t(Number(value.slice(5)))}{t(" 月")}</option>)}</select></label>}
     </div>
-    {!library.error && !filtered.length && <div className="release-empty"><h3>{t(favoritesOnly ? '还没有本机收藏' : '还没有可展示的剧集')}</h3><p>{t("前往「发现短剧」打开官方短剧，展开「公开剧评」读取首次公开日期；也可以点「收藏到本机」，留待下次观看。")}</p></div>}
+    {!library.error && !filtered.length && <div className="release-empty"><h3>{t(favoritesOnly ? '还没有收藏的短剧' : '暂无短剧上线动态')}</h3><p>{t("在「发现短剧」或「热播榜单」中收藏感兴趣的短剧，即可在此追踪更新时间。")}</p></div>}
     {days.map(day => <section className="release-day" key={day} aria-label={t(`${day} 首次公开`)}><h3><span>{t(Number(day.slice(8)))}</span><small>{t(Number(day.slice(5, 7)))}{t(" 月")}</small></h3><ul>{monthItems.filter(item => item.date === day).map(row)}</ul></section>)}
     {undated.length > 0 && <section className="release-undated"><h3>{t("公开日期待提供 ")}<span>{t(undated.length)}{t(" 部")}</span></h3><p>{t("这些剧集已保存在本机，但服务尚未返回首次公开日期。")}</p><ul>{undated.map(row)}</ul></section>}
   </section>;

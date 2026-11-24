@@ -16,7 +16,7 @@ export default function BossKeySettings({ active = true }) {
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    if (!window.electronAPI?.getBossKeyState) { setError('请更新桌面试用包后设置老板键'); return; }
+    if (!window.electronAPI?.getBossKeyState) { setError('请更新客户端后使用老板键功能'); return; }
     window.electronAPI.getBossKeyState().then(state => {
       if (cancelled) return;
       setConfig(state); setDraft(displayKey(state.accelerator)); setError(state.error || '');

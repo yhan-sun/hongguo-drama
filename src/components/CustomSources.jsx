@@ -52,7 +52,7 @@ export default function CustomSources({ active = true }) {
       const result = await waitForRequest(window.electronAPI.testCustomSource(draft), { signal: controller.signal, message: '测试超时，请检查 API 地址后重试' });
       if (controller.signal.aborted) return;
       if (!result?.success) throw new Error(result?.error || '测试失败，请检查 API 地址');
-      setMessage(`目录连接成功，返回 ${result.count || 0} 部。测试不代表每一集都能播放；保存后加入来源。`);
+      setMessage(`目录连接成功，返回 ${result.count || 0} 部。测试成功，保存后即可在片库与搜索中使用。`);
     } catch (cause) { if (!controller.signal.aborted) setError(cause.message || '来源测试失败'); }
     finally { if (!controller.signal.aborted) setBusy(''); }
   };
@@ -75,7 +75,7 @@ export default function CustomSources({ active = true }) {
 
   return <section className="settings-card custom-sources" aria-labelledby="custom-sources-title">
     <div className="custom-sources-heading"><Globe size={18} /><h3 id="custom-sources-title">{t("自定义播放源")}</h3></div>
-    <p className="settings-hint">{t("接入你有权使用的苹果 CMS V10 JSON API。仅支持接口返回的 MP4 / M3U8 直链，不支持任意网页、插件或付费解锁。")}</p>
+    <p className="settings-hint">{t("支持接入标准苹果 CMS V10 接口（MP4 / M3U8 直链）。保存后可在发现与搜索中无缝切换。")}</p>
     <form onSubmit={event => { event.preventDefault(); persist(draft); }}>
       <fieldset disabled={!!busy} className="custom-source-form">
         <label>{t("来源名称")}<input className="input-field" value={draft.name} maxLength={60} required placeholder={t("例如：我的片库")} onChange={event => patch('name', event.target.value)} /></label>

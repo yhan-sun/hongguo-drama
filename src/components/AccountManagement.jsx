@@ -123,7 +123,7 @@ export default function AccountManagement({ active = true, inModal = false, onCl
       const result = await window.electronAPI.logoutAccount?.();
       if (!result?.success) throw new Error(result?.error || '退出账号失败');
       historyRequest.current++;
-      setAccount(null); setRows([]); setQuery(''); setStatus('已退出账号，本机观看记录不受影响。');
+      setAccount(null); setRows([]); setQuery(''); setStatus('已退出账号，本地观看记录不受影响。');
     } catch (failure) { setError(failure.message || '退出账号失败，请重试'); }
     finally { setBusy(false); }
   };
@@ -173,7 +173,7 @@ export default function AccountManagement({ active = true, inModal = false, onCl
           <div className="account-summary">
             <span>{t("云端观看记录")}</span>
             <strong>{t(historyLoading && !rows.length ? '读取中…' : `${rows.length} 部`)}</strong>
-            <small>{t("最近 50 部；独立展示，不会覆盖本机记录")}</small>
+            <small>{t("最近 50 部；独立展示，不影响本地观看记录")}</small>
           </div>
           <div className="account-page-actions">
             <button className="btn btn-outline btn-sm" type="button" disabled={busy || historyLoading} onClick={async () => {
@@ -217,7 +217,7 @@ export default function AccountManagement({ active = true, inModal = false, onCl
         <>
           <div className="account-login-copy">
             <h3>{t("扫码或网页登录")}</h3>
-            <p>{t("使用手机短剧 App 扫码并确认登录，或在网页版授权。登录凭据受 macOS 钥匙串安全保护，本机观看记录保持独立保存。")}</p>
+            <p>{t("使用手机短剧 App 扫码即可快捷登录，或在网页端授权。登录后可多端同步观看记录，本设备数据保持独立安全。")}</p>
           </div>
           {qr && (
             <div className="account-qr">
@@ -257,12 +257,12 @@ export default function AccountManagement({ active = true, inModal = false, onCl
 
       <div className="account-sync-footer">
         <div className="sync-note-text">
-          <strong>{t("💡 本机观看记录独立说明")}</strong>
-          <p>{t("牛油果短剧采用本地优先存储架构，所有播放断点、追更状态与下载缓存均保存在本机，无需联网登录即可获得完整体验。登录后可便捷浏览云端历史并一键续播。")}</p>
+          <strong>{t("💡 本地观看与云端同步说明")}</strong>
+          <p>{t("未登录时也能畅快追剧，播放进度与下载均保存在本设备。登录后可随时浏览云端历史，多端无缝接续观看。")}</p>
         </div>
         {onNavigate && (
           <button className="btn btn-outline btn-sm" onClick={() => { if (onClose) onClose(); onNavigate('history'); }}>
-            {t("查看本机记录")}
+            {t("查看观看记录")}
           </button>
         )}
       </div>

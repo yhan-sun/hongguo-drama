@@ -18,9 +18,9 @@ const FORMAT_PRESETS = [
 ];
 
 const PROXY_MODES = [
-  { value: 'system', label: '跟随系统', desc: '接口与下载读取启动环境代理；发现页等浏览器请求使用系统代理' },
-  { value: 'custom', label: '手动指定', desc: '填写 HTTP/HTTPS 代理地址与端口，忽略环境变量中的绕过规则（NO_PROXY）' },
-  { value: 'direct', label: '强制直连', desc: '忽略一切代理，直接连接' },
+  { value: 'system', label: '跟随系统', desc: '自动读取系统网络代理设置' },
+  { value: 'custom', label: '手动指定', desc: '自定义 HTTP/HTTPS 代理服务器地址与端口' },
+  { value: 'direct', label: '强制直连', desc: '不使用任何网络代理，直接连接' },
 ];
 
 // 常见代理软件默认端口，方便一键填入
@@ -28,7 +28,7 @@ const PORT_PRESETS = [
   { label: 'Clash / Mihomo', port: 7890 },
   { label: 'V2rayN', port: 10809 },
   { label: 'Shadowsocks', port: 1080 },
-  { label: 'Burp / 抓包', port: 8080 },
+  { label: '本地代理 (8080)', port: 8080 },
 ];
 
 /** 已保存设置 -> 当前生效的代理描述 */
@@ -46,7 +46,7 @@ function describeProxy(settings) {
     if (!host) return { on: false, text: '已开启，但未填写代理地址' };
     return { on: true, text: `${host}${port ? ':' + port : ''}` };
   }
-  return { on: true, text: '接口/下载跟随启动环境，浏览器跟随系统' };
+  return { on: true, text: '跟随系统网络代理' };
 }
 
 function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegionFocus = 0 }) {
@@ -262,7 +262,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
             <button className="btn btn-outline btn-sm" onClick={openProxyModal}>
               <Globe size={15} />{t("配置代理")}</button>
           </div>
-          <p className="settings-hint">{t("手动代理用于接口、下载和应用内浏览器；跟随系统时，接口与下载读取启动时的环境代理及绕过规则，发现页等浏览器请求使用系统代理。保存后立即生效。")}</p>
+          <p className="settings-hint">{t("支持跟随系统网络代理或自定义代理服务器，方便在不同网络环境下流畅访问。保存后立即生效。")}</p>
         </div>
 
       </fieldset>
@@ -292,10 +292,10 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
       <fieldset className="settings-card" disabled={saving}>
         <div className="settings-group">
           <span className="settings-label">{t("播放与缓存")}</span>
-          <label className="proxy-switch-row"><input type="checkbox" checked={settings.cache_next_episode !== false} onChange={event => update('cache_next_episode', event.target.checked)} /><span className="proxy-switch-text">{t("缓存后续 2 集")}<em>{t("开始播放后最多预取接下来两集可在线播放的分集，减少连续切集等待；会使用网络流量。")}</em></span></label>
-          <label className="proxy-switch-row"><input type="checkbox" checked={settings.compat_mode !== false} onChange={event => update('compat_mode', event.target.checked)} /><span className="proxy-switch-text">{t("自动兼容模式")}<em>{t("无法解码时尝试转码播放，解决部分黑屏有声问题。")}</em></span></label>
-          <label className="proxy-switch-row"><input type="checkbox" checked={settings.auto_delete_watched === true} onChange={event => update('auto_delete_watched', event.target.checked)} /><span className="proxy-switch-text">{t("看完自动删除")}<em>{t("看完一集后删除该集已下载的视频、在线播放缓存和转码缓存。下载文件会永久删除；需要时可重新下载。保存后生效。")}</em></span></label>
-          <label className="proxy-switch-row"><input type="checkbox" aria-label={t("优先使用红果 App 搜索")} checked={settings.search_app_enabled === true} onChange={event => update('search_app_enabled', event.target.checked)} /><span className="proxy-switch-text">{t("优先使用红果 App 搜索")}<em>{t("失败或空结果自动回退官网；关闭此项时，官网不可用仍会尝试 App 备用搜索。")}</em></span></label>
+          <label className="proxy-switch-row"><input type="checkbox" checked={settings.cache_next_episode !== false} onChange={event => update('cache_next_episode', event.target.checked)} /><span className="proxy-switch-text">{t("缓存后续 2 集")}<em>{t("播放时自动预加载后续集数，连续追剧更丝滑无卡顿。")}</em></span></label>
+          <label className="proxy-switch-row"><input type="checkbox" checked={settings.compat_mode !== false} onChange={event => update('compat_mode', event.target.checked)} /><span className="proxy-switch-text">{t("自动兼容模式")}<em>{t("遇到特殊编码时自动平滑解码，保障画面正常播放。")}</em></span></label>
+          <label className="proxy-switch-row"><input type="checkbox" checked={settings.auto_delete_watched === true} onChange={event => update('auto_delete_watched', event.target.checked)} /><span className="proxy-switch-text">{t("看完自动删除")}<em>{t("每集播放完毕自动清理本地缓存与下载文件，保持磁盘空间充裕。")}</em></span></label>
+          <label className="proxy-switch-row"><input type="checkbox" aria-label={t("优先使用红果 App 搜索")} checked={settings.search_app_enabled === true} onChange={event => update('search_app_enabled', event.target.checked)} /><span className="proxy-switch-text">{t("优先使用红果 App 搜索")}<em>{t("无结果时自动切换备用源智能搜索，保障片源查找更完整。")}</em></span></label>
         </div>
         <div className="settings-group">
           <span className="settings-label">{t("弹幕按钮设置")}</span>
@@ -333,7 +333,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
           </div>
           <p className="settings-hint">{t("文件将保存到 ")}<code>{t("下载目录/红果短剧/剧名/")}</code>{t(" 下")}</p>
           <label className="proxy-switch-row"><input type="checkbox" aria-label={t("普通下载保存整剧资料")} checked={settings.download_metadata === true}
-            onChange={event => update('download_metadata', event.target.checked)} /><span className="proxy-switch-text">{t("普通下载保存整剧资料")}<em>{t("自动随视频保存封面、简介和 tvshow.nfo，不生成分集 NFO。可将下载目录设为已挂载的 NAS，程序会自动建剧名文件夹，无需再使用“下载到 NAS”。普通下载仍遵循看完自动删除设置。")}</em></span></label>
+            onChange={event => update('download_metadata', event.target.checked)} /><span className="proxy-switch-text">{t("普通下载保存整剧资料")}<em>{t("随视频一同保存海报封面与剧集信息（方便 Jellyfin / Emby / Plex 刮削识别）。")}</em></span></label>
         </div>
 
         <div className="settings-group">
@@ -368,7 +368,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
             <option value="1080p">1080P</option>
             <option value="720p">720P</option>
           </select>
-          <p className="settings-hint" id="default-download-quality-hint">{t("保存后用于新建下载任务，也可在下载时单独选择。红果片源所选清晰度不可用或下载失败时，自动尝试更低清晰度，并在下载管理中提示；已有文件不自动删除或覆盖。")}</p>
+          <p className="settings-hint" id="default-download-quality-hint">{t("新建下载任务时生效，也可在下载时单独选择。所选画质不可用时自动匹配最佳清晰度，已下载的文件完整保留。")}</p>
         </div>
 
         <div className="settings-group">
@@ -383,21 +383,21 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
               <option key={n} value={n}>{t(n)}{t(" 个同时下载")}</option>
             ))}
           </select>
-          <p className="settings-hint">{t("同时下载 ")}<b>{settings.max_concurrent || 3}</b>{t(" 集（保存后立即生效）。 并发越高越快，但可能触发接口限流，建议 3~5。")}</p>
+          <p className="settings-hint">{t("同时下载 ")}<b>{settings.max_concurrent || 3}</b>{t(" 集（保存后生效）。下载任务数建议设为 3~5，下载更稳定顺畅。")}</p>
         </div>
 
 
         <div className="settings-group">
           <span className="settings-label">{t("追剧提醒")}</span>
           <label className="proxy-switch-row"><input type="checkbox" checked={settings.watch_updates_enabled !== false} onChange={event => update('watch_updates_enabled', event.target.checked)} /><span className="proxy-switch-text">{t("自动检查新集")}<em>{t("应用运行期间，每部剧约 6 小时检查一次；列表较多时分批检查")}</em></span></label>
-          <label className="proxy-switch-row"><input type="checkbox" checked={settings.watch_sequels_enabled !== false} onChange={event => update('watch_sequels_enabled', event.target.checked)} /><span className="proxy-switch-text">{t("查找疑似新一季")}<em>{t("约每天按剧名搜索一次，仅提示同名且季数更高的剧；可能遗漏或误报")}</em></span></label>
+          <label className="proxy-switch-row"><input type="checkbox" checked={settings.watch_sequels_enabled !== false} onChange={event => update('watch_sequels_enabled', event.target.checked)} /><span className="proxy-switch-text">{t("查找疑似新一季")}<em>{t("每日自动检索在追短剧的后续季，发现更新时及时提示。")}</em></span></label>
           <label className="proxy-switch-row"><input type="checkbox" checked={settings.watch_notifications_enabled === true} onChange={event => update('watch_notifications_enabled', event.target.checked)} /><span className="proxy-switch-text">{t("发送系统通知")}<em>{t("默认关闭。开启后还需允许 macOS 通知；关闭不影响观看记录红点")}</em></span></label>
         </div>
 
         <div className="settings-group">
           <span className="settings-label">{t("配置文件位置")}</span>
           {settings.proxy_password_warning && <p className="alert alert-error" role="alert">{t(settings.proxy_password_warning)}</p>}
-          <p className="settings-hint">{t("代理密码由本机系统安全存储加密；更换电脑后可能需要重新输入。")}</p>
+          <p className="settings-hint">{t("敏感凭据已由系统安全加密存储。")}</p>
           <p className="settings-hint settings-path"><code>{t(appInfo?.dataDir || '系统配置目录')}</code></p>
           {appInfo?.configNote
             ? <p className="settings-hint" role="status">{t(appInfo.configNote)}</p>
@@ -557,7 +557,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
                 )}
               </div>
 
-              <p className="settings-hint">{t("测试仅检查接口与下载访问红果官网的连接，不代表发现页等浏览器请求的代理状态。")}</p>
+              <p className="settings-hint">{t("点击下方按钮测试当前代理设置的网络连通性。")}</p>
               {testResult && (
                 <div className={`proxy-test-result ${testResult.success ? 'ok' : 'fail'}`}>
                   {testResult.success ? <Check size={15} /> : <AlertCircle size={15} />}

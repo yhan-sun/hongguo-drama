@@ -769,7 +769,7 @@ function Browse({ onNavigate, active = true }) {
                 <div className="filter-popover-group">
                   <div className="popover-group-label">
                     <span>{t("剧集状态")}</span>
-                    <span className="info-tooltip-wrap" title={t("仅筛选当前页片单，按来源平台标记分类")}>
+                    <span className="info-tooltip-wrap" title={t("按剧集完结与更新状态筛选")}>
                       <Info size={13} />
                     </span>
                   </div>
@@ -992,7 +992,7 @@ function Browse({ onNavigate, active = true }) {
                   </div>
 
                   {mobile && detail.description && <details className="mobile-drama-description"><summary>{t("剧情简介")}</summary><p>{detail.description}</p></details>}
-                  {mobile && <p className="browse-drawer-sub">{t(selectingDownloads ? '点选需要下载的集数' : '点选集数直接播放，已下载视频优先从本机播放')}</p>}
+                  {mobile && <p className="browse-drawer-sub">{t(selectingDownloads ? '点选需要下载的集数' : '点选集数直接播放，已下载视频优先从本地流畅播放')}</p>}
 
                   <div className="browse-eps">
                     {detail.episodes.map((ep) => (

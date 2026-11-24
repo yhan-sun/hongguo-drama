@@ -93,7 +93,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
       const result = await window.electronAPI.refreshWatchHistory({ scope });
       if (!result?.success) throw new Error(result?.error || '检查失败，请重试');
       await load();
-      setStatus(`已检查 ${result.checked} 部${result.failed ? `，${result.failed} 部未完成，可稍后重试` : ''}${result.remaining ? `；本次预算内还有 ${result.remaining} 部，点击继续检查` : ''}`);
+      setStatus(`已检查 ${result.checked} 部${result.failed ? `，${result.failed} 部未完成，可稍后重试` : ''}${result.remaining ? `；还有 ${result.remaining} 部待检查，点击继续检查` : ''}`);
     } catch (failure) { setError(failure.message || '检查失败，请重试'); }
     finally { setChecking(false); setProgress(null); }
   };
@@ -177,7 +177,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
 
   return <section className="history-container" aria-labelledby="history-title">
     <div className="history-header">
-      <div><h1 id="history-title">{t("观看记录")}</h1><p>{t("继续上次的故事。记录仅保存在这台电脑。")}</p></div>
+      <div><h1 id="history-title">{t("观看记录")}</h1><p>{t("接着上次的进度继续观看。")}</p></div>
       <div className="history-tools">
         <select className="history-scope" value={scope} onChange={event => savePreferences({ ...preferences, scope: event.target.value })} disabled={checking || !!checkingRow || loading} aria-label={t("批量检测范围")}>
           <option value="all">{t("全部记录")}</option>
@@ -190,7 +190,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
         </button>
         <span
           className="history-info-badge"
-          title={t("运行期间自动检查新集；批量检测范围只决定本次检查哪些记录，不会隐藏记录或清除已有红点。同组续作和疑似同剧汇总到组头。可在设置中调整通知。")}
+          title={t("支持自动检测在追短剧更新，也可在此手动全量检查。")}
         >
           <Info size={15} />
         </span>

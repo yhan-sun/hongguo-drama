@@ -536,7 +536,6 @@ function DownloadManager({ onNavigate, active = true }) {
 
       <div className="dm-usage-notice" role="note" aria-label={t("下载风险与使用倡议")}>
         <p><strong>{t("临时故障会自动重试。")}</strong>{t("红果片源下载遇到断网、超时或传输不完整时，普通故障最多追加 3 次重试，分别等待 10、30、60 秒；注册拒绝或空响应最多追加 6 轮重试，分别等待 15、30、60、120、300、600 秒；来源暂不可用时等待 3、8、15 分钟。等待期间可停止或手动重试，但共享冷却可能让手动重试延后开始。权限限制、磁盘错误等需手动处理；重试后仍失败的任务会保留。")}</p>
-        <p>{t("本软件用于学习研究，建议体验后 24 小时内自行删除；请勿冒充官方或以虚假授权名义收费。开源权利义务以 GPLv3 为准。上述倡议不代表获得平台或版权方授权，也不构成免责承诺。")}</p>
       </div>
 
       <div className="dm-toolbar">
@@ -544,21 +543,21 @@ function DownloadManager({ onNavigate, active = true }) {
           className="btn btn-primary"
           onClick={resumeAll}
           disabled={!tasks.some(task => ['stopped', 'failed', 'pending'].includes(task.status))}
-          title={t("全部开始：把所有剧中等待中 / 已停止 / 失败的任务排队开跑")}
+          title={t("开始全部任务（所有剧）")}
         >
           <Play size={15} />{t("全部开始")}</button>
         <button
           className="btn btn-outline"
           onClick={pauseAll}
           disabled={pausableCount === 0}
-          title={t("全部暂停：暂停所有剧中正在下载、等待中及等待自动重试的任务")}
+          title={t("暂停全部任务（所有剧）")}
         >
           <Pause size={15} />{t("全部暂停")}</button>
         <button
           className="btn btn-outline"
           onClick={retryAllFailed}
           disabled={failedCount === 0}
-          title={t("把所有失败/已停止的任务一次性重新加入下载队列")}
+          title={t("重新尝试所有失败与已停止的任务")}
         >
           <Zap size={15} />
           {t(failedCount > 0 ? `重试失败 (${failedCount})` : '重试失败')}
@@ -568,7 +567,7 @@ function DownloadManager({ onNavigate, active = true }) {
           className="btn btn-outline"
           onClick={selectAllFailed}
           disabled={failedCount === 0}
-          title={t("一键勾选所有失败/已停止的任务")}
+          title={t("选中所有失败与已停止的任务")}
         >
           <CheckSquare size={15} />
           {t(failedCount > 0 ? `选中失败项 (${failedCount})` : '选中失败项')}
@@ -691,15 +690,15 @@ function DownloadManager({ onNavigate, active = true }) {
       {queue.active > 0 && (
         <div className="dm-queue-bar">
           <span className="dm-queue-running">
-            <span className="dm-queue-pulse" />{t("正在并发下载 ")}<b>{t(queue.active)}</b> / {t(queue.maxConcurrent)}
+            <span className="dm-queue-pulse" />{t("正在下载 ")}<b>{t(queue.active)}</b> / {t(queue.maxConcurrent)}
             {queue.queued > 0 ? <>{t(" · 队列等待 ")}<b>{t(queue.queued)}</b></> : null}
           </span>
-          <span className="dm-queue-hint">{t("并发数可在「设置 → 最大并发下载数」调整")}</span>
+          <span className="dm-queue-hint">{t("下载任务上限可在「设置」中调整")}</span>
         </div>
       )}
 
       {retryableSelectedCount > 0 && (
-        <div className="dm-hint">{t("已选中 ")}<b>{t(retryableSelectedCount)}</b>{t(" 个失败项，点")}<b>{t("「重试选中」")}</b>{t(" 即会重新下载（无需重新解析）。")}</div>
+        <div className="dm-hint">{t("已选中 ")}<b>{t(retryableSelectedCount)}</b>{t(" 个失败项，点")}<b>{t("「重试选中」")}</b>{t(" 即会重新开始下载。")}</div>
       )}
 
       {loadError && <div className="alert alert-error" role="alert">{t(loadError)}<button className="btn btn-outline btn-sm" onClick={() => refresh(true)}>{t("重新加载")}</button></div>}
@@ -885,7 +884,7 @@ function DownloadManager({ onNavigate, active = true }) {
                 <span>{t("同时删除本地文件")}{t(confirmAsk.estBytes > 0 ? `（释放约 ${fmtSize(confirmAsk.estBytes)}）` : '')}
                 </span>
               </label>
-              <p className="dm-confirm-hint">{t("不勾选则只移除任务记录，磁盘上的视频文件会保留（可在文件管理器里自行管理）。")}</p>
+              <p className="dm-confirm-hint">{t("未勾选时仅从列表移除，已下载的视频文件仍会保存在本地。")}</p>
             </div>
             <div className="player-confirm-foot">
               <button className="btn btn-outline" onClick={() => setConfirmAsk(null)}>{t("取消")}</button>

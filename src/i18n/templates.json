@@ -131,6 +131,7 @@
   "正在更改「{0}」": "Changing {0}",
   "已检查 {0} 部{1}{2}": "Checked {0} dramas{1}{2}",
   "，{0} 部未完成，可稍后重试": ", {0} incomplete; retry later",
+  "；还有 {0} 部待检查，点击继续检查": "; {0} remain to be checked; click to continue",
   "；本次预算内还有 {0} 部，点击继续检查": "; {0} remain in this batch; click to continue",
   "《{0}》分集已检查；续作检查未完成：{1}": "Episodes checked for {0}; sequel check incomplete: {1}",
   "已移除《{0}》的观看记录，视频文件不受影响。": "Removed watch history for {0}; video files are preserved.",

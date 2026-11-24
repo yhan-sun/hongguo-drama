@@ -120,11 +120,11 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   const [loading, setLoading] = useState(false);
   const [cinemaMode, setCinemaMode] = useState(false);
   useEffect(() => {
-    document.body.classList.toggle('cinema-mode', cinemaMode);
-    document.documentElement.setAttribute('data-cinema', cinemaMode ? 'true' : 'false');
+    document.body?.classList?.toggle('cinema-mode', cinemaMode);
+    document.documentElement?.setAttribute?.('data-cinema', cinemaMode ? 'true' : 'false');
     return () => {
-      document.body.classList.remove('cinema-mode');
-      document.documentElement.removeAttribute('data-cinema');
+      document.body?.classList?.remove?.('cinema-mode');
+      document.documentElement?.removeAttribute?.('data-cinema');
     };
   }, [cinemaMode]);
 
@@ -866,10 +866,10 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     setLocalPlayback(null);
     window.electronAPI.openLocalPlayback(localFileUrl).then(result => {
       if (cancelled) { if (result?.url) window.electronAPI.releaseLocalPlayback(result.url); return; }
-      if (!result?.success) { setPlaybackError(result?.error || '本机视频读取失败'); return; }
+      if (!result?.success) { setPlaybackError(result?.error || '本地视频读取失败'); return; }
       playbackUrl = result.url;
       setLocalPlayback({ fileUrl: localFileUrl, url: playbackUrl });
-    }).catch(() => { if (!cancelled) setPlaybackError('本机视频读取失败，请重试'); });
+    }).catch(() => { if (!cancelled) setPlaybackError('本地视频读取失败，请重试'); });
     return () => { cancelled = true; if (playbackUrl) window.electronAPI.releaseLocalPlayback(playbackUrl); };
   }, [localFileUrl, playbackRequested, playbackActive, playbackVersion]);
   const localUrl = mobile ? localPlayback?.fileUrl === localFileUrl ? localPlayback.url : '' : current?.fileUrl;
@@ -1867,8 +1867,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         </div>
         <div className="player-empty">
           <Film size={40} />
-          <p>{t("还没有可播放的短剧")}</p>
-          <p className="player-empty-sub">{t("先发现或搜索一部短剧，在这里选择集数、观看和管理。")}</p>
+          <p>{t("剧库空空如也")}</p>
+          <p className="player-empty-sub">{t("在「发现短剧」或「热播榜单」中挑选一部喜欢的短剧开始观看吧。")}</p>
           <div className="player-empty-actions">
             {onNavigate && (
               <button className="btn btn-primary" onClick={() => onNavigate('browse')}>{t("发现短剧")}</button>
@@ -1885,6 +1885,32 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
 
   return (
     <div className={`player-container ${drawerCollapsed ? 'episodes-collapsed' : ''} ${episodesOpen ? '' : 'mobile-episodes-collapsed'}`}>
+      {!mobile && <div className="player-online-quality-row" hidden style={{ display: 'none' }}>
+          <label className="player-download-quality player-decoder-control">
+            <span>{t("解码方式")}</span>
+            <select className="input-field" aria-label={t("解码方式")} value={fastConversion ? 'hardware' : softwareDecode ? 'software' : 'auto'}
+              aria-describedby={!mobile ? 'player-decoder-help' : undefined} disabled={qualityLoading || playbackSettingSaving}
+              onChange={event => {
+                changeDecoder(event.target.value);
+                if (event.target.value === 'software') {
+                  showToast('已启用兼容软件解码模式');
+                }
+              }}>
+              <option value="auto">{t("自动（系统解码）")}</option>
+              <option value="software">{t("软件解码（CPU）")}</option>
+              <option value="hardware">{t("高性能显卡快速解码（老电脑请勿使用）")}</option>
+            </select>
+          </label>
+          <p id="player-decoder-help" className="player-download-quality-hint">{t("优先使用显卡加速格式转换，ByteVC2仍由CPU解码；不支持时提示并回退。")}</p>
+          <button aria-pressed={cacheNext} disabled={qualityLoading || playbackSettingSaving}
+            onClick={() => savePlaybackSetting('cache_next_episode', !cacheNext, setCacheNext)}>
+            {t("缓存后续 2 集")}
+          </button>
+          <button aria-pressed={autoCompat} disabled={qualityLoading || playbackSettingSaving}
+            onClick={() => savePlaybackSetting('compat_mode', !autoCompat, setAutoCompat)}>
+            {t("兼容模式")}
+          </button>
+      </div>}
       {/* 4.3 顶部极简标题条（高 44px） */}
       <div className="player-top-clean-bar" hidden={actionsHidden || (mobile && controlsHidden)}>
         <div className="player-bar-left">
@@ -1996,7 +2022,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                         onChange={event => {
                           changeDecoder(event.target.value);
                           if (event.target.value === 'software') {
-                            showToast('已启用 CPU 软解回退播放 ByteVC2 编码');
+                            showToast('已启用兼容软件解码模式');
                           }
                         }}
                       >
@@ -2060,7 +2086,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                       <button
                         className="btn btn-outline btn-sm"
                         disabled={current?.status !== 'completed'}
-                        title={t("用系统为 MP4 设置的默认播放器打开已下载本集")}
+                        title={t("在系统默认播放器中打开已下载视频")}
                         onClick={async () => {
                           videoRef.current?.pause();
                           try {
@@ -2069,14 +2095,14 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                           } catch { showToast('无法打开系统播放器，请稍后重试'); }
                         }}
                       >
-                        {t("系统播放器打开本集")}
+                        {t("外部播放器打开")}
                       </button>
-                      <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("释放在线播放占用的内存")}>
+                      <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("清空在线播放临时缓存")}>
                         <Zap size={13} />
                         {t("清空播放缓存")}{cacheInfo.count > 0 ? ` (${cacheInfo.count})` : ''}
                       </button>
                       {compatCache.files > 0 && (
-                        <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("删除转码产生的兼容格式文件")}>
+                        <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("清空格式转换临时文件")}>
                           <Trash2 size={13} />
                           {t("清空转码缓存")}{` (${fmtSize(compatCache.bytes)})`}
                         </button>
@@ -2179,7 +2205,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                             aria-label={t(`永久移除 ${s.series_title} 的剧库记录`)}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setConfirmAsk({ title: '永久移除剧库记录', message: `将永久移除《${s.series_title}》的剧库记录，不能通过恢复列表找回。同时清理本剧播放缓存。本地下载视频文件不会删除；以后可重新搜索添加。`, okText: '永久移除', danger: true, onOk: () => removeSeries(s.series_id, s.series_title) });
+                              setConfirmAsk({ title: '从剧库移除', message: `确定将《${s.series_title}》从剧库移除吗？已下载的本地视频文件仍会保留。`, okText: '确认移除', danger: true, onOk: () => removeSeries(s.series_id, s.series_title) });
                             }}
                           >
                             <X size={15} />
@@ -2202,9 +2228,9 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                 title={t("删除所有已下载的本地文件")}
                 onClick={() => {
                   setConfirmAsk({
-                    title: '删除全部本地文件',
-                    message: `将删除所有已下载的剧集文件（包括已从剧库移除但保留的视频），共 ${storageTotal.files} 个文件、${fmtSize(storageTotal.bytes)}。\n剧集列表与分集信息会保留，之后仍可在线播放或重新下载。`,
-                    okText: '全部删除',
+                    title: '清空所有下载视频',
+                    message: `将清空所有已下载的剧集视频（共 ${storageTotal.files} 个文件，释放 ${fmtSize(storageTotal.bytes)}）。\n播放进度与剧集信息仍会保留。`,
+                    okText: '确认清空',
                     danger: true,
                     onOk: async () => {
                       if (current?.fileUrl && !onlineUrl && !compatMap[currentIndex]) stopPlayback('本地播放已停止，可重新连接片源观看');
@@ -2214,7 +2240,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                 }}
               >{t("删除全部已下载")}</button>
             )}
-            <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("释放在线播放占用的内存")}>
+            <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("清空在线播放临时缓存")}>
               <Zap size={14} />{t("清空播放缓存")}{t(cacheInfo.count > 0 ? ` (${cacheInfo.count})` : '')}
             </button>
             {compatCache.files > 0 && (
@@ -2385,7 +2411,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                 <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
               </>
             ) : mobile && localFileUrl && !localUrl ? (
-              <><RefreshCw size={30} className="spin" /><p>{t("正在读取本机视频…")}</p></>
+              <><RefreshCw size={30} className="spin" /><p>{t("正在读取本地视频…")}</p></>
             ) : waitingFor != null ? (
               <>
                 <RefreshCw size={30} className="spin" />

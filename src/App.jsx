@@ -52,7 +52,7 @@ export default function App({ platformPages = {} }) {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [activeDownloads, setActiveDownloads] = useState(0);
   const [accountStatus, setAccountStatus] = useState(null);
-  const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme || 'light');
+  const [themeMode, setThemeMode] = useState(() => document.documentElement?.dataset?.theme || 'light');
 
   // 导航历史栈（用于前进/后退）
   const [historyStack, setHistoryStack] = useState(['browse']);
@@ -87,7 +87,7 @@ export default function App({ platformPages = {} }) {
   const [playerTarget, setPlayerTarget] = useState(null);
 
   // 全局片源状态与 Popover
-  const { sources: mediaSources, revision: sourceRevision } = useMediaSources();
+  const { sources: mediaSources, revision: sourceRevision } = typeof useMediaSources === 'function' ? useMediaSources() : { sources: [], revision: 0 };
   const [globalSource, setGlobalSource] = useState('hongguo');
   const [globalChannel, setGlobalChannel] = useState(() => {
     try { return localStorage.getItem(CATALOG_CHANNEL_KEY) === 'web' ? 'web' : 'app'; }
@@ -162,8 +162,8 @@ export default function App({ platformPages = {} }) {
         setAccountModalOpen(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener?.('keydown', handleKeyDown);
+    return () => window.removeEventListener?.('keydown', handleKeyDown);
   }, []);
 
   // 点击外部关闭弹窗
@@ -172,24 +172,24 @@ export default function App({ platformPages = {} }) {
       if (sourcePopoverRef.current && !sourcePopoverRef.current.contains(e.target)) {
         setSourcePopoverOpen(false);
       }
-      if (searchInputRef.current && !searchInputRef.current.contains(e.target) && !e.target.closest('.global-search-container')) {
+      if (searchInputRef.current && !searchInputRef.current.contains(e.target) && !e.target.closest?.('.global-search-container')) {
         setSearchPopoverOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener?.('mousedown', handleOutsideClick);
+    return () => document.removeEventListener?.('mousedown', handleOutsideClick);
   }, []);
 
   // 监听正文滚动显示面包屑
   useEffect(() => {
-    const activeMain = document.querySelector(`.main-content[data-page="${page}"]`);
+    const activeMain = document.querySelector?.(`.main-content[data-page="${page}"]`);
     if (!activeMain) return;
     const handleScroll = () => {
       setScrolledPastTitle(activeMain.scrollTop > 50);
     };
-    activeMain.addEventListener('scroll', handleScroll, { passive: true });
+    activeMain.addEventListener?.('scroll', handleScroll, { passive: true });
     setScrolledPastTitle(activeMain.scrollTop > 50);
-    return () => activeMain.removeEventListener('scroll', handleScroll);
+    return () => activeMain.removeEventListener?.('scroll', handleScroll);
   }, [page]);
 
   const navigate = (nextPage) => {

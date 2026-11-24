@@ -142,6 +142,6 @@ export default function RandomDrama({ active, refreshKey = 0, onNavigate }) {
       </>}
     </div>
     {sourcesError && <p className="random-drama-note" role="status">{t("来源列表更新失败，暂用上次列表；可在设置重新保存来源后重试。")}</p>}
-    <p className="random-drama-note">{t("从所选来源当前目录随机抽取，不代表热播排名。播放以来源实际可用的免费分集为准。")}</p>
+    <p className="random-drama-note">{t("随机挑选精彩短剧，带你发现意想不到的好故事。")}</p>
   </div>;
 }

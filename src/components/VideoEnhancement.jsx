@@ -35,7 +35,7 @@ export function VideoEnhancementControls({ enhancement, available = true }) {
       <output>{t(strength)}%</output>
     </label>}
     <p className="video-enhancement-note">{t("只增强播放画面，下载文件保持原画。")}</p>
-    {mode === 'anime4k' && <p className="video-enhancement-note">{t("适合动漫；支持 1080p 及以下片源，真人画面可能偏平滑。")}</p>}
+    {mode === 'anime4k' && <p className="video-enhancement-note">{t("特别适合动态漫剧；可提升画面线条清晰度。")}</p>}
     {status.message && <p className={`video-enhancement-note ${status.state === 'error' ? 'enhancement-error' : ''}`} role="status">{t(status.message)}</p>}
     {saveError && <p className="video-enhancement-note" role="status">{t("设置未能保存，下次打开可能恢复默认。")}</p>}
   </div>;

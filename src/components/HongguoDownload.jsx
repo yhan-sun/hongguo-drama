@@ -494,13 +494,13 @@ function HongguoDownload({ onNavigate, active = true }) {
             </div>
           </div>
 
-          <p className="settings-hint batch-quality-hint" id="batch-quality-hint">{t("新建下载任务生效；红果片源所选清晰度不可用或下载失败时，自动尝试更低清晰度，并在下载管理中提示。已有文件不自动删除或覆盖。")}</p>
+          <p className="settings-hint batch-quality-hint" id="batch-quality-hint">{t("新建下载任务时生效；若所选画质不可用将自动匹配最佳清晰度，已下载的文件完整保留。")}</p>
 
           {seriesData.web_accessible_episodes != null && seriesData.web_accessible_episodes < seriesData.total && (
             <p className="settings-hint">{t("网页源提供前 ")}{t(seriesData.web_accessible_episodes)}{t(" 集，后续集数自动尝试 App 片源。")}</p>
           )}
 
-          {seriesData.episodes.some((ep) => ep.locked) && <p className="settings-hint">{t("锁定集需在来源平台解锁，本应用不提供解锁；全选和范围选择会自动跳过。")}</p>}
+          {seriesData.episodes.some((ep) => ep.locked) && <p className="settings-hint">{t("锁定集数需在平台解锁后观看；全选和范围选择时会自动跳过。")}</p>}
 
           {/* 筛选与操作栏 */}
           <div className="controls-row">
