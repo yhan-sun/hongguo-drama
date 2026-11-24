@@ -845,7 +845,8 @@ function Browse({ onNavigate, active = true }) {
           {visibleResults.map((item) => {
             const dl = downloadedMap[String(item.series_id)];
             const historyItem = historyMap[String(item.series_id)];
-            const rankNum = item.rank > 0 ? item.rank : 0;
+            const isRankMode = String(category || '').startsWith('hot-');
+            const rankNum = isRankMode && item.rank > 0 ? item.rank : 0;
             const rankClass = rankNum === 1 ? 'rank-gold' : rankNum === 2 ? 'rank-silver' : rankNum === 3 ? 'rank-bronze' : '';
 
             return (

@@ -400,3 +400,276 @@
   color: var(--accent);
   font-weight: 500;
 }
+
+/* 4.1 单行紧凑继续观看横条 */
+.continue-watching-compact-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.cw-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cw-dramas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cw-dramas::-webkit-scrollbar {
+  display: none;
+}
+.cw-drama-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  max-width: 280px;
+}
+.cw-drama-chip:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cw-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+  font-weight: 500;
+}
+.cw-ep {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.cw-drama-chip:hover .cw-ep {
+  color: var(--accent);
+}
+.cw-play-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.cw-dismiss-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.cw-dismiss-btn:hover {
+  background: var(--bg-inset);
+  color: var(--text-primary);
+}
+
+/* 4.1 精简筛选区系统 */
+.browse-filter-system {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* 第一行：大类 Tab（全部 / 真人短剧 / 动态漫剧）+ 右侧操作按钮 */
+.browse-primary-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.browse-main-tabs {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--bg-inset);
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+}
+.browse-main-tab-btn {
+  padding: 6px 18px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.browse-main-tab-btn:hover {
+  color: var(--text-primary);
+}
+.browse-main-tab-btn.active {
+  background: var(--bg-card);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+.browse-action-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.browse-total-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+.action-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+/* 第二行：热门题材单行横向滚动胶囊 + 最右侧「展开全部筛选」Popover */
+.browse-secondary-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.browse-genre-scroll-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 0;
+}
+.browse-genre-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+.genre-pill-chip {
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.genre-pill-chip:hover {
+  background: var(--bg-inset);
+  color: var(--text-primary);
+}
+.genre-pill-chip.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.browse-more-filters-anchor {
+  position: relative;
+  flex-shrink: 0;
+}
+.filter-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.filter-expand-btn .chevron-icon {
+  transition: transform 0.2s ease;
+}
+.filter-expand-btn .chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+/* 展开全部筛选 Popover */
+.browse-filter-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.filter-popover-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.popover-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.popover-genre-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.genre-chip-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.genre-chip-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.genre-chip-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
