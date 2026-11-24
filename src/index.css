@@ -164,6 +164,11 @@ input::placeholder { color: var(--text-tertiary); }
 .toolbar-location { font-weight: 500; font-size: 12px; color: var(--text-secondary); }
 .toolbar-caption { color: var(--text-tertiary); font-size: 11px; }
 .main-content { flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 34px 36px 48px; }
+.main-content[data-page="player"] {
+  background: #0f1014 !important;
+  color: #f4f4f5 !important;
+  padding: 16px 24px 32px;
+}
 .main-content[hidden], [hidden] { display: none !important; }
 .app-storage-error { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 12px 24px; background: var(--danger-bg); color: var(--danger); }
 .app-storage-error span { min-width: 0; overflow-wrap: anywhere; }

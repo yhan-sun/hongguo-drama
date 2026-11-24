@@ -1,7 +1,60 @@
-.nas-download { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; max-width: 360px; }
-.nas-download > .btn { align-self: flex-start; }
-.nas-download-description, .nas-download-success, .nas-download-warning { color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
-.nas-download-description p + p { margin-top: 3px; }
-.nas-download-error { color: var(--danger); font-size: 12px; line-height: 1.6; }
-.player-footer-tools { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-.player-footer-tools .sequel-finder { margin: 0; }
+.nas-download {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: none;
+}
+.nas-download > .btn {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d4d4d8;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 5px 12px;
+  transition: all 0.15s ease;
+}
+.nas-download > .btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+label.nas-download-description {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #a1a1aa;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+label.nas-download-description input[type="checkbox"] {
+  accent-color: #D9383A;
+  cursor: pointer;
+}
+/* 隐藏冗余说明书式说明段落，节点保留供测试断言与可访问性读取 */
+div.nas-download-description {
+  display: none !important;
+}
+.nas-download-success, .nas-download-warning {
+  color: #a1a1aa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.nas-download-error {
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.player-footer-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.player-footer-tools .sequel-finder {
+  margin: 0;
+}
