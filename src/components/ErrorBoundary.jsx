@@ -9,6 +9,10 @@ export default class ErrorBoundary extends React.Component {
     return { failed: true };
   }
 
+  componentDidCatch(error, info) {
+    console.error("ErrorBoundary caught:", error, info);
+  }
+
   render() {
     if (!this.state.failed) return this.props.children;
     return <main className="error-boundary">
@@ -20,3 +24,4 @@ export default class ErrorBoundary extends React.Component {
     </main>;
   }
 }
+

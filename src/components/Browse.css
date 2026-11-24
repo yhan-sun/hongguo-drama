@@ -294,6 +294,29 @@
 }
 
 /* 毛玻璃榜单徽标 */
+.browse-card-item {
+  min-width: 0;
+  width: 100%;
+}
+.browse-cover {
+  width: 100%;
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: var(--bg-inset);
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.browse-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.browse-card:hover .browse-cover img {
+  transform: scale(1.04);
+}
 .browse-rank-glass {
   position: absolute;
   top: 8px;
@@ -323,6 +346,30 @@
   color: #fff;
 }
 
+/* 浮动播放图标 */
+.browse-hover-action {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(217, 56, 58, 0.4);
+  z-index: 5;
+}
+.browse-card:hover .browse-hover-action {
+  opacity: 1;
+  transform: scale(1);
+}
+
 /* 卡片观看细进度条 */
 .browse-card-progress {
   position: absolute;
@@ -336,4 +383,20 @@
 .browse-card-progress-bar {
   height: 100%;
   background: var(--accent);
+}
+
+.browse-card-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.browse-meta-heat {
+  color: var(--accent);
+  font-weight: 500;
 }

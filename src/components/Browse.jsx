@@ -164,24 +164,6 @@ function Browse({ onNavigate, active = true }) {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  useEffect(() => {
-    const onChannelChange = (e) => {
-      if (e.detail && ['app', 'web'].includes(e.detail)) switchCatalogChannel(e.detail);
-    };
-    const onSourceChange = (e) => {
-      if (e.detail) switchSource(e.detail);
-    };
-    const onRefresh = () => refreshList();
-    window.addEventListener('catalog-channel-changed', onChannelChange);
-    window.addEventListener('media-source-changed', onSourceChange);
-    window.addEventListener('refresh-catalog-list', onRefresh);
-    return () => {
-      window.removeEventListener('catalog-channel-changed', onChannelChange);
-      window.removeEventListener('media-source-changed', onSourceChange);
-      window.removeEventListener('refresh-catalog-list', onRefresh);
-    };
-  }, [switchCatalogChannel, switchSource, refreshList]);
-
   const showToast = useCallback((text, type = 'success') => {
     setToast({ text, type });
     clearTimeout(toastTimer.current);
@@ -408,6 +390,24 @@ function Browse({ onNavigate, active = true }) {
     setError('');
     setRefreshNotice('');
   };
+
+  useEffect(() => {
+    const onChannelChange = (e) => {
+      if (e.detail && ['app', 'web'].includes(e.detail)) switchCatalogChannel(e.detail);
+    };
+    const onSourceChange = (e) => {
+      if (e.detail) switchSource(e.detail);
+    };
+    const onRefresh = () => refreshList();
+    window.addEventListener('catalog-channel-changed', onChannelChange);
+    window.addEventListener('media-source-changed', onSourceChange);
+    window.addEventListener('refresh-catalog-list', onRefresh);
+    return () => {
+      window.removeEventListener('catalog-channel-changed', onChannelChange);
+      window.removeEventListener('media-source-changed', onSourceChange);
+      window.removeEventListener('refresh-catalog-list', onRefresh);
+    };
+  }, [switchCatalogChannel, switchSource, refreshList]);
 
   const selectDiscoveryBatch = (cat, gen) => {
     const sameQuery = cat === category && gen === genre;
@@ -859,23 +859,23 @@ function Browse({ onNavigate, active = true }) {
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSeries(item); } }}
                   title={`${mobile ? t('播放：') : ''}${item.series_title}`}
                 >
-                  <div className="browse-cover-container">
+                  <div className="browse-cover">
                     {/* 左上角半透明深色毛玻璃排名角标（Top 3 带金/银/铜微光） */}
                     {rankNum > 0 && (
-                      <span className={`browse-rank-badge-glass ${rankClass}`}>
+                      <span className={`browse-rank-glass ${rankNum <= 3 ? `rank-${rankNum}` : ''}`}>
                         {rankNum <= 3 ? `TOP ${rankNum}` : `#${rankNum}`}
                       </span>
                     )}
 
                     {item.cover ? (
-                      <img src={item.cover} alt={item.series_title} loading="lazy" className="browse-cover-img" />
+                      <img src={item.cover} alt={item.series_title} loading="lazy" />
                     ) : (
                       <div className="cover-placeholder"><Film size={24} /></div>
                     )}
 
                     {/* 底部紧贴 2px 珊瑚红进度条（仅看过的剧显示） */}
                     {historyItem && (
-                      <div className="browse-card-progress-track">
+                      <div className="browse-card-progress">
                         <div
                           className="browse-card-progress-bar"
                           style={{ width: `${Math.min(100, Math.max(10, ((historyItem.vid_index || 1) / (item.total || item.episode_count || 80)) * 100))}%` }}
@@ -885,7 +885,7 @@ function Browse({ onNavigate, active = true }) {
 
                     {/* Hover 时右下角浮现播放图标 */}
                     <div className="browse-hover-action" aria-hidden="true">
-                      <Play size={18} />
+                      <Play size={16} fill="currentColor" />
                     </div>
                   </div>
 
