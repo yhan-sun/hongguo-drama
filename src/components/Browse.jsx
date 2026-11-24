@@ -160,8 +160,8 @@ function Browse({ onNavigate, active = true }) {
         setFilterPopoverOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document?.addEventListener?.('mousedown', handleOutsideClick);
+    return () => document?.removeEventListener?.('mousedown', handleOutsideClick);
   }, []);
 
   const showToast = useCallback((text, type = 'success') => {
@@ -851,13 +851,11 @@ function Browse({ onNavigate, active = true }) {
 
             return (
               <div className="browse-card-item" key={item.series_id}>
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
                   className="browse-card"
                   disabled={openingId === item.series_id}
                   onClick={() => openSeries(item)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSeries(item); } }}
                   title={`${mobile ? t('播放：') : ''}${item.series_title}`}
                 >
                   <div className="browse-cover">
@@ -898,7 +896,7 @@ function Browse({ onNavigate, active = true }) {
                       {item.heat && !historyItem && <span className="browse-meta-heat">{item.heat}</span>}
                     </div>
                   </div>
-                </div>
+                </button>
                 {mobile && (
                   <button className="mobile-drama-details" aria-label={t(`详情与下载：${item.series_title}`)} onClick={() => openSeries(item, false)}>
                     {t(openingId === item.series_id ? '正在打开…' : '详情与下载')}

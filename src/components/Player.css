@@ -1038,46 +1038,75 @@
   gap: 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-width: 0;
+  flex-wrap: nowrap;
 }
 .drawer-stat {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 5px;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: max-content;
 }
 .drawer-stat-label {
   font-size: 12px;
   color: #a1a1aa;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 .drawer-stat-value {
   font-size: 13px;
   font-weight: 650;
   color: #f4f4f5;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 .drawer-header-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .batch-download-container {
   position: relative;
 }
-.btn-xs {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #d4d4d8;
+.player-episode-panel .btn,
+.player-episode-panel .btn-outline,
+.player-episode-panel .btn-xs,
+.drawer-header-actions .btn,
+.drawer-header-actions .btn-outline,
+.drawer-header-actions .btn-xs {
+  color: #e4e4e7 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  padding: 3px 8px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
 }
-.btn-xs:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+.player-episode-panel .btn:hover:not(:disabled),
+.player-episode-panel .btn-outline:hover:not(:disabled),
+.drawer-header-actions .btn:hover:not(:disabled) {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.player-episode-panel .btn:disabled,
+.player-episode-panel .btn-outline:disabled,
+.drawer-header-actions .btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
 }
 .batch-download-dropdown {
   position: absolute;
@@ -1286,31 +1315,57 @@
   flex-direction: column;
   gap: 12px;
 }
+.player-footer-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .cast-panel {
   display: inline-flex;
+  position: relative;
 }
 .cast-panel > .btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #d4d4d8;
-  border-radius: 8px;
-  font-size: 12px;
-  padding: 5px 12px;
-  transition: all 0.15s ease;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #d4d4d8 !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  padding: 5px 12px !important;
+  transition: all 0.15s ease !important;
 }
 .cast-panel > .btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 .cast-panel section {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 320px;
+  z-index: 100;
   background: #20222a !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 10px !important;
   color: #f4f4f5 !important;
-  margin-top: 8px;
+  padding: 12px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5) !important;
 }
 .cast-panel section p {
-  color: #a1a1aa;
-  font-size: 12px;
+  color: #a1a1aa !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin: 6px 0 !important;
+}
+.cast-panel section .btn {
+  color: #e4e4e7 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  margin-top: 4px;
+}
+.cast-panel section .btn:hover:not(:disabled) {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
 }

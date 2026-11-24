@@ -136,8 +136,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         setCinemaMode(v => !v);
       }
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window?.addEventListener?.('keydown', handleKey);
+    return () => window?.removeEventListener?.('keydown', handleKey);
   }, []);
 
   const [drawerCollapsed, setDrawerCollapsed] = useState(false);
@@ -155,8 +155,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         setBatchDownloadOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document?.addEventListener?.('mousedown', handleClick);
+    return () => document?.removeEventListener?.('mousedown', handleClick);
   }, []);
 
   const [favorited, setFavorited] = useState(false);
@@ -1910,6 +1910,13 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             onClick={() => savePlaybackSetting('compat_mode', !autoCompat, setAutoCompat)}>
             {t("兼容模式")}
           </button>
+          <button aria-pressed={autoDelete} disabled={qualityLoading || playbackSettingSaving}
+            onClick={() => autoDelete ? savePlaybackSetting('auto_delete_watched', false, setAutoDelete) : savePlaybackSetting('auto_delete_watched', true, setAutoDelete)}>
+            <Trash2 size={15} />{t("看完自动删")}
+          </button>
+          <button onClick={() => openMergeDialog()} disabled={merging}>
+            {t(merging ? '提交中...' : '合并导出全集')}
+          </button>
       </div>}
       {/* 4.3 顶部极简标题条（高 44px） */}
       <div className="player-top-clean-bar" hidden={actionsHidden || (mobile && controlsHidden)}>
@@ -1926,17 +1933,16 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             <span className="player-bar-title" title={detail ? detail.series_title : ''}>
               {detail ? detail.series_title : t('短剧播放')}
             </span>
-            {seriesList.length > 1 && (
-              <button
-                className={`btn-series-picker-tag ${pickerOpen ? 'open' : ''}`}
-                onClick={() => setPickerOpen(v => !v)}
-                title={t("切换其他剧集")}
-                aria-expanded={pickerOpen}
-              >
-                <span>{seriesList.length}{t("部")}</span>
-                <ChevronDown size={12} />
-              </button>
-            )}
+            <button
+              className={`btn-series-picker-tag series-picker-btn ${pickerOpen ? 'open' : ''}`}
+              onClick={() => setPickerOpen(v => !v)}
+              title={t("切换其他剧集")}
+              aria-expanded={pickerOpen}
+              style={{ display: seriesList.length > 1 ? undefined : 'none' }}
+            >
+              <span>{seriesList.length}{t("部")}</span>
+              <ChevronDown size={12} />
+            </button>
           </div>
           <span className="player-ep-pill">
             {t(mobile ? `第 ${currentIndex} 集 · 共 ${episodes.length || 0} 集` : `第 ${currentIndex} / 共 ${episodes.length || 0} 集`)}
@@ -2243,11 +2249,9 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("清空在线播放临时缓存")}>
               <Zap size={14} />{t("清空播放缓存")}{t(cacheInfo.count > 0 ? ` (${cacheInfo.count})` : '')}
             </button>
-            {compatCache.files > 0 && (
-              <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("删除转码产生的兼容格式文件")}>
-                <Trash2 size={14} />{t("清空转码缓存 (")}{t(fmtSize(compatCache.bytes))})
-              </button>
-            )}
+            <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("删除转码产生的兼容格式文件")}>
+              <Trash2 size={14} />{t("清空转码缓存")}{compatCache.files > 0 ? ` (${fmtSize(compatCache.bytes)})` : ''}
+            </button>
           </div>
         </div>
       )}
@@ -2676,13 +2680,14 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       </div>
 
       <div className="player-footer" hidden={actionsHidden}>
-        {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
         {/^[0-9]{6,30}$/.test(String(activeSeriesId)) ? (
           <CommunityPanel seriesId={activeSeriesId} episodeId={current?.vid} title={detail?.series_title || ''} cover={detail?.cover || ''}
             trailingAction={<NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />}>
+            {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
             <SequelFinder seriesId={activeSeriesId} active={active && !actionsHidden} />
           </CommunityPanel>
         ) : <div className="player-footer-tools">
+          {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
           <SequelFinder seriesId={activeSeriesId} active={active && !actionsHidden} />
           <NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />
         </div>}
@@ -2700,7 +2705,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
               <p><b>{t("高质量分辨率合并")}</b>{t("：逐集检查实际文件，全部达到1080P才能开始；有低清分集请选快速或兼容合并。")}</p>
               <p><b>{t("快速合并")}</b>{t("：优先无损拼接，保留每段原分辨率，部分设备可能不兼容。")}</p>
               <p><b>{t("兼容合并")}</b>{t("：必要时转为H.264/AAC，仍保留每段原分辨率，处理较慢。")}</p>
-              <p>{t("三种方式都保留原文件，只合并已下载分集，不自动补齐，也不会把低清变成真高清。")}</p>
+              <p>{t("三种方式都保留原文件，只合并已下载分集，未下载的分集不会自动补齐。")}</p>
               {mergeError && <p className="alert-error" role="alert">{t(mergeError)}</p>}
             </div>
             <div className="player-confirm-foot">

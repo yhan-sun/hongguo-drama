@@ -120,7 +120,9 @@ function mountPlayer(props, { api, softwareDecode = false, shortcuts } = {}) {
     './CastPanel': 'CastPanel',
     './VideoEnhancement': { default: 'VideoEnhancement', useVideoEnhancement: () => ({}) },
     './Player.css': {},
-    './icons': Object.fromEntries(['Play', 'Film', 'Download', 'Check', 'RefreshCw', 'Layers', 'X', 'Trash2', 'ChevronDown', 'Zap'].map(name => [name, name])),
+    '../localLibrary.js': { readLocalLibrary: () => ({ items: [] }), saveLocalSeries: () => ({}) },
+    '../localLibrary': { readLocalLibrary: () => ({ items: [] }), saveLocalSeries: () => ({}) },
+    './icons': Object.fromEntries(['Play', 'Film', 'Download', 'Check', 'RefreshCw', 'Layers', 'X', 'Trash2', 'ChevronDown', 'Zap', 'ChevronLeft', 'ChevronRight', 'ArrowLeft', 'Heart', 'Sun', 'Moon', 'Maximize2', 'PanelRightClose', 'Settings', 'Info'].map(name => [name, name])),
   };
   const module = { exports: {} };
   const source = transformSync(fs.readFileSync(new URL('../Player.jsx', import.meta.url), 'utf8'), { loader: 'jsx', format: 'cjs' }).code;

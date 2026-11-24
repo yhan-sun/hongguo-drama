@@ -847,7 +847,7 @@ function DownloadManager({ onNavigate, active = true }) {
               <p><b>{t("高质量分辨率合并")}</b>{t("：逐集检查实际文件，全部达到1080P才能开始；有低清分集请选快速或兼容合并。")}</p>
               <p><b>{t("快速合并")}</b>{t("：优先无损拼接，保留每段原分辨率，部分设备可能不兼容。")}</p>
               <p><b>{t("兼容合并")}</b>{t("：必要时转为H.264/AAC，仍保留每段原分辨率，处理较慢。")}</p>
-              <p>{t("三种方式都保留原文件，只合并已下载分集，不自动补齐，也不会把低清变成真高清。")}</p>
+              <p>{t("三种方式都保留原文件，只合并已下载分集，未下载的分集不会自动补齐。")}</p>
               <label className="dm-confirm-check">
                 <input type="checkbox" checked={mergeDeleteSources} onChange={event => setMergeDeleteSources(event.target.checked)} />
                 <span>{t("合并成功后删除已合并分集")}</span>

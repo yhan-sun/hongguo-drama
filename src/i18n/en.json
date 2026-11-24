@@ -533,6 +533,7 @@
   "兼容合并": "Compatible merge",
   "：必要时转为H.264/AAC，仍保留每段原分辨率，处理较慢。": ": converts to H.264/AAC when needed, preserving each segment’s resolution. Processing is slower.",
   "三种方式都保留原文件，只合并已下载分集，不自动补齐，也不会把低清变成真高清。": "All methods preserve originals and merge downloaded episodes only. They do not fetch missing episodes or turn low-resolution footage into true HD.",
+  "三种方式都保留原文件，只合并已下载分集，未下载的分集不会自动补齐。": "All methods preserve original files and merge downloaded episodes only. Uncompleted episodes are not automatically added.",
   "合并成功后删除已合并分集": "Delete merged episodes after a successful merge",
   "开启后会永久删除本次已合并的分集视频和下载记录；合并失败、取消或输出未成功时不会删除。": "When enabled, permanently delete the merged episode videos and download records. Nothing is deleted if merging fails, is cancelled, or produces no successful output.",
   "取消": "Cancel",
