@@ -307,7 +307,7 @@ function HongguoDownload({ onNavigate, active = true }) {
       if (textExportRequest.current === request && seriesIdRef.current === request.seriesId) {
         textExportRequest.current = null;
         setExportNote('');
-        setErrorMsg('提交下载异常: ' + err.message);
+        setErrorMsg('下载失败：' + (err.message || '请重试'));
       }
     } finally {
       setSubmitting(false);

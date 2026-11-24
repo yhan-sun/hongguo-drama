@@ -307,7 +307,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
         <div className="settings-group">
           <label className="settings-label" htmlFor="danmaku-source">{t("弹幕来源")}</label>
           <select id="danmaku-source" className="input-field select-field" value={danmakuSource} onChange={event => writeDanmakuSource(event.target.value)}>
-            <option value="official">{t("时间轴弹幕")}</option><option value="comments">{t("本集评论（备用）")}</option>
+            <option value="official">{t("时间轴弹幕")}</option><option value="comments">{t("本集评论")}</option>
           </select>
           <p className="settings-hint">{t("切换立即生效，仅请求所选来源。时间轴弹幕跟随视频进度；本集评论依次展示，与视频时间无对应。两种来源共用显示偏好。")}</p>
           <button type="button" className="btn btn-outline btn-sm" onClick={async () => {
@@ -356,7 +356,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
             value={settings.name_format || ''}
             onChange={(e) => update('name_format', e.target.value)}
           />
-          <p className="settings-hint">{t("可用变量：")}<code>{t("剧名")}</code> · <code>{t("集数")}</code>{t("（如 001）· ")}<code>{t("标题")}</code>{t("。每集保留独立集号，避免同名覆盖。")}</p>
+          <p className="settings-hint">{t("可用变量：")}<code>{t("剧名")}</code> · <code>{t("集数")}</code>{t("（如 001）· ")}<code>{t("标题")}</code>{t("。建议保留集号变量，方便排序与管理。")}</p>
         </div>
 
         <div className="settings-group">
@@ -372,10 +372,10 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
         </div>
 
         <div className="settings-group">
-          <label className="settings-label">{t("最大并发下载数")}</label>
+          <label className="settings-label">{t("同时下载任务数")}</label>
           <select
             className="input-field select-field"
-            aria-label={t("最大并发下载数")}
+            aria-label={t("同时下载任务数")}
             value={settings.max_concurrent || 3}
             onChange={(e) => update('max_concurrent', parseInt(e.target.value, 10))}
           >
@@ -409,7 +409,7 @@ function SettingsPage({ active = true, preview = false, appInfo = null, wakeRegi
         {preview ? <>
         <div className="settings-group">
           <span className="settings-label">{t("独立预览")}</span>
-          <p className="settings-hint">{t("预览数据独立保存，不接收正式版更新，不会覆盖已安装的红果短剧。")}</p>
+          <p className="settings-hint">{t("测试版数据与正式版相互独立，互不影响。")}</p>
         </div>
         </> : <>
         <div className="settings-group">

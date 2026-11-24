@@ -208,7 +208,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
           </button>
         ))}
       </div>
-      <label className="mac-switch-control" title={t("只调整当前列表；批量检测范围不变，也不会删除记录")}>
+      <label className="mac-switch-control" title={t("同一部剧有多季时，只展示最新季，便于清爽浏览")}>
         <input type="checkbox" checked={hideLowSeasons} disabled={loading} onChange={event => savePreferences({ ...preferences, hideLowSeasons: event.target.checked })} />
         <span className="mac-switch-slider" />
         <span className="mac-switch-label">{t("折叠同剧低季")}</span>
@@ -219,7 +219,7 @@ export default function WatchHistory({ active = true, onNavigate }) {
     {checking && progress?.total > 0 && <p className="history-hint" role="status">{t("正在检查 ")}{t((progress.checked || 0) + (progress.failed || 0) + (progress.skipped || 0))} / {t(progress.total)}{t(progress.current ? `：${progress.current}` : '')}
     </p>}
     {t(loading ? <p role="status">{t("正在读取观看记录…")}</p> : !rows.length ? <div className="history-empty">
-      <Clock size={30} /><h2>{t("还没有观看记录")}</h2><p>{t("真正开始播放后，短剧和进度会出现在这里。")}</p>
+      <Clock size={30} /><h2>{t("还没有观看记录")}</h2><p>{t("播放短剧后，观看进度会自动记录在这里。")}</p>
       <button className="btn btn-primary" onClick={() => onNavigate?.('browse')}>{t("去发现短剧")}</button>
     </div> : !visibleRows.length ? <div className="history-empty" role="status">
       <Clock size={30} /><h2>{t(emptyTitle)}</h2>

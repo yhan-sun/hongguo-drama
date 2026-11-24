@@ -558,7 +558,7 @@ function Browse({ onNavigate, active = true }) {
         showToast((res && res.error) || '提交下载失败', 'error');
       }
     } catch (e) {
-      showToast('提交异常: ' + e.message, 'error');
+      showToast('提交失败：' + (e.message || '请重试'), 'error');
     } finally {
       setSubmitting(false);
     }

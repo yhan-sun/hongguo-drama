@@ -58,7 +58,7 @@ export function useCommentDanmaku({ seriesId, episodeId, active }) {
     const validated = { enabled: next.enabled === true, ...normalizeDanmakuSettings(next) };
     setPreferences(validated);
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(validated)); setSaveError(''); }
-    catch { setSaveError('设置已生效，但本机保存失败'); }
+    catch { setSaveError('设置已生效，但本地保存失败'); }
   };
   const settings = useMemo(() => normalizeDanmakuSettings(preferences), [preferences]);
   const status = !supported ? '仅红果来源的当前集支持评论弹幕' : !enabled ? '开启后展示本集公开评论' : !active ? '播放本集后显示评论弹幕'

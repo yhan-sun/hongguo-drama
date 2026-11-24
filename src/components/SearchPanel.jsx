@@ -178,7 +178,7 @@ function SearchPanel({ onSelectSeries, onViewSeries, onSwitchToInput, active = t
           setHistory(saveSearchTerm(kw));
           setHistoryError('');
         } catch {
-          setHistoryError('搜索结果已显示，但本机搜索历史保存失败。');
+          setHistoryError('搜索结果已显示，但本地搜索历史未能保存。');
         }
       }
       setResults(rankSearchResults(merged, kw));
@@ -245,7 +245,7 @@ function SearchPanel({ onSelectSeries, onViewSeries, onSwitchToInput, active = t
         setError((res && res.error) || '拉取分集失败');
       }
     } catch (e) {
-      if (request === requestVersion.current) setError('拉取分集异常: ' + e.message);
+      if (request === requestVersion.current) setError('获取分集失败：' + (e.message || '请重试'));
     } finally {
       if (request === requestVersion.current) setPickingId('');
     }

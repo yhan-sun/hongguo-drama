@@ -62,7 +62,7 @@ export default function BossKeySettings({ active = true }) {
       </button>
       <button type="button" className="btn btn-outline btn-sm" aria-label={t("保存老板键")} disabled={disabled} onClick={() => save(config.enabled)}>{t(saving ? '保存中…' : '保存')}</button>
     </div>
-    <p className="settings-hint boss-key-hint" id="boss-key-help">{t("老板键点击按键后，同时按下组合键，再点保存；Esc 取消。支持 Ctrl、Cmd、Alt 组合或 F1–F12。启用后在其他应用中也生效：按一次暂停并隐藏，再按恢复窗口，保持暂停。Mac 同时隐藏和恢复 Dock 图标。")}</p>
+    <p className="settings-hint boss-key-hint" id="boss-key-help">{t("支持设置全局组合键（如 Ctrl/Cmd/Alt 组合或 F1–F12）。启用后按键可快速一键隐藏并暂停窗口，再次按下恢复。")}</p>
     {error && <p className="shortcut-error settings-hint boss-key-hint" role="alert">{t(error)}</p>}
     {message && <p className="settings-hint boss-key-hint" role="status" aria-live="polite">{t(message)}</p>}
   </>;

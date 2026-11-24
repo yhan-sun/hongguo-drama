@@ -1020,12 +1020,12 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         setCompatProgress(null);
         if (autoCompat && reconnectOnce()) return;
         if (onlineSourceRef.current === `${activeSeriesId}:${vidIndex}`) {
-          await recoverOnlineFailure(ep, '转码异常: ' + e.message);
+          await recoverOnlineFailure(ep, '转码失败：' + (e.message || '请重试'));
           return;
         }
         setDecodeFailed(true);
-        setCompatError('转码异常: ' + e.message);
-        showToast('转码异常: ' + e.message);
+        setCompatError('转码失败：' + (e.message || '请重试'));
+        showToast('转码失败：' + (e.message || '请重试'));
       }
     },
     [episodes, activeSeriesId, onlineQuality, autoCompat, reconnectOnce, showToast, currentPosition, persistPosition, holdVideoFrame, recoverOnlineFailure]
@@ -1816,7 +1816,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       showToast(`${tip}，可在「下载管理」查看进度`);
       if (res.codecWarning) showToast(res.codecWarning);
     } catch (e) {
-      if (dialogGeneration === mergeDialogGenerationRef.current) setMergeError('合并异常: ' + e.message);
+      if (dialogGeneration === mergeDialogGenerationRef.current) setMergeError('合并失败：' + (e.message || '请重试'));
     } finally {
       mergeRequestRef.current = false;
       setMerging(false);
@@ -2011,7 +2011,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                         onChange={event => changeOnlineQuality(event.target.value)}
                       >
                         <option value="auto">{t(supportsOnlineQuality ? '自动（1080P优先）' : '由片源决定')}</option>
-                        <option value="compat">{t('老电脑（H.264优先）')}</option>
+                        <option value="compat">{t('流畅优先（省电兼容）')}</option>
                         <option value="720p">720P</option>
                         <option value="1080p">1080P</option>
                       </select>
@@ -2051,7 +2051,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                     </label>
 
                     <label className="settings-popover-toggle">
-                      <span>{t("预缓存后续 2 集（加速连续切集）")}</span>
+                      <span>{t("预加载下两集（切集更流畅）")}</span>
                       <input
                         type="checkbox"
                         checked={cacheNext}
@@ -2061,7 +2061,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                     </label>
 
                     <label className="settings-popover-toggle">
-                      <span>{t("兼容模式（无法解码时自动转码）")}</span>
+                      <span>{t("兼容播放模式（遇到播放异常自动转换）")}</span>
                       <input
                         type="checkbox"
                         checked={autoCompat}
@@ -2071,14 +2071,14 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                     </label>
 
                     <label className="settings-popover-toggle">
-                      <span>{t("看完一集后自动清理本集缓存")}</span>
+                      <span>{t("看完自动清理缓存（节省磁盘空间）")}</span>
                       <input
                         type="checkbox"
                         checked={autoDelete}
                         disabled={qualityLoading || playbackSettingSaving}
                         onChange={() => autoDelete ? savePlaybackSetting('auto_delete_watched', false, setAutoDelete) : setConfirmAsk({
                           title: '开启看完自动删除',
-                          message: '看完一集后，将永久删除该集已下载的视频、在线播放缓存和转码缓存。需要时可重新下载。',
+                          message: '看完一集后，将自动清理该集的本地视频与播放缓存，节省磁盘空间。后续仍可随时重新播放或下载。',
                           okText: '开启自动删除', danger: true,
                           onOk: () => savePlaybackSetting('auto_delete_watched', true, setAutoDelete),
                         })}
@@ -2101,14 +2101,14 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                           } catch { showToast('无法打开系统播放器，请稍后重试'); }
                         }}
                       >
-                        {t("外部播放器打开")}
+                        {t("用系统播放器打开")}
                       </button>
-                      <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("清空在线播放临时缓存")}>
+                      <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("清理在线播放产生的临时缓存")}>
                         <Zap size={13} />
                         {t("清空播放缓存")}{cacheInfo.count > 0 ? ` (${cacheInfo.count})` : ''}
                       </button>
                       {compatCache.files > 0 && (
-                        <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("清空格式转换临时文件")}>
+                        <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("清理兼容转换产生的临时文件")}>
                           <Trash2 size={13} />
                           {t("清空转码缓存")}{` (${fmtSize(compatCache.bytes)})`}
                         </button>
@@ -2505,7 +2505,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             <Film size={30} />
             <p>{t("当前片源暂时无法播放")}</p>
             <span className="compat-overlay-sub" role={compatError ? 'alert' : undefined}>
-              {t(compatError || (mobile ? '请重新连接片源，或在播放设置中更换画质。安卓兼容转码尚未接入。' : '请先重新连接片源；若仍有画面或格式问题，可尝试转码为 H.264 兼容格式。'))}
+              {t(compatError || (mobile ? '请重新连接片源，或在设置中更换清晰度。' : '请先重新连接片源；若画面仍未正常显示，可尝试转码为兼容格式播放。'))}
             </span>
             <div className="player-placeholder-actions">
               <button className="btn btn-primary" onClick={retryUserPlayback}>{t("重试本集")}</button>

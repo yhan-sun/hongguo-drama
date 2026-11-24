@@ -1011,7 +1011,7 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 .player-episode-panel {
-  width: 310px;
+  width: 330px;
   flex-shrink: 0;
   background: #17181f !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -1047,13 +1047,15 @@
   gap: 5px;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  min-width: max-content;
+  min-width: max-content !important;
+  word-break: keep-all !important;
 }
 .drawer-stat-label {
   font-size: 12px;
   color: #a1a1aa;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+  word-break: keep-all !important;
 }
 .drawer-stat-value {
   font-size: 13px;
@@ -1062,6 +1064,7 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+  word-break: keep-all !important;
 }
 .drawer-header-actions {
   display: flex;
@@ -1079,9 +1082,9 @@
 .drawer-header-actions .btn,
 .drawer-header-actions .btn-outline,
 .drawer-header-actions .btn-xs {
-  color: #e4e4e7 !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
   font-size: 11px !important;
   line-height: 1.2 !important;
   padding: 3px 8px !important;
@@ -1099,8 +1102,8 @@
 .player-episode-panel .btn-outline:hover:not(:disabled),
 .drawer-header-actions .btn:hover:not(:disabled) {
   color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.18) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.38) !important;
 }
 .player-episode-panel .btn:disabled,
 .player-episode-panel .btn-outline:disabled,

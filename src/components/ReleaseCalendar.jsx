@@ -32,7 +32,7 @@ export default function ReleaseCalendar({ onPlay, opening = '', active = true })
     <div className="release-title"><strong>{item.title}</strong><span>{t(item.date ? `首次公开 ${item.date}` : '暂无首次公开时间')}</span></div>
     <div className="release-row-actions">
       <button type="button" className="btn btn-sm btn-outline" aria-label={t(`${item.favorite ? '取消收藏' : '收藏'}《${item.title}》`)} aria-pressed={item.favorite} onClick={() => setLibrary(saveLocalSeries({ id: item.id, title: item.title, favorite: !item.favorite }))}>{t(item.favorite ? '已收藏' : '收藏')}</button>
-      <button type="button" className="btn btn-sm btn-outline" aria-label={t(`移除《${item.title}》`)} title={t("仅移除本机收藏与日历记录，不删除视频文件")} onClick={() => setLibrary(removeLocalSeries(item.id))}>{t("移除")}</button>
+      <button type="button" className="btn btn-sm btn-outline" aria-label={t(`移除《${item.title}》`)} title={t("仅从日历和收藏中移除，保留本地下载文件")} onClick={() => setLibrary(removeLocalSeries(item.id))}>{t("移除")}</button>
       <button type="button" className="btn btn-sm" disabled={!onPlay || !!opening || !active} aria-label={t(`播放《${item.title}》`)} onClick={() => onPlay?.({ seriesId: item.id, title: item.title })}>{t(opening === item.id ? '打开中…' : '播放')}</button>
     </div>
   </li>;
@@ -47,6 +47,6 @@ export default function ReleaseCalendar({ onPlay, opening = '', active = true })
     </div>
     {!library.error && !filtered.length && <div className="release-empty"><h3>{t(favoritesOnly ? '还没有收藏的短剧' : '暂无短剧上线动态')}</h3><p>{t("在「发现短剧」或「热播榜单」中收藏感兴趣的短剧，即可在此追踪更新时间。")}</p></div>}
     {days.map(day => <section className="release-day" key={day} aria-label={t(`${day} 首次公开`)}><h3><span>{t(Number(day.slice(8)))}</span><small>{t(Number(day.slice(5, 7)))}{t(" 月")}</small></h3><ul>{monthItems.filter(item => item.date === day).map(row)}</ul></section>)}
-    {undated.length > 0 && <section className="release-undated"><h3>{t("公开日期待提供 ")}<span>{t(undated.length)}{t(" 部")}</span></h3><p>{t("这些剧集已保存在本机，但服务尚未返回首次公开日期。")}</p><ul>{undated.map(row)}</ul></section>}
+    {undated.length > 0 && <section className="release-undated"><h3>{t("待更新上线日期 ")}<span>{t(undated.length)}{t(" 部")}</span></h3><p>{t("这些剧集已收藏在本地，片源方暂未提供具体上线时间。")}</p><ul>{undated.map(row)}</ul></section>}
   </section>;
 }

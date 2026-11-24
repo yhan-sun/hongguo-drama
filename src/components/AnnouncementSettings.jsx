@@ -47,9 +47,9 @@ export default function AnnouncementSettings() {
   return <div className="settings-group">
     <span className="settings-label">{t("公告通知")}</span>
     <label className="proxy-switch-row"><input type="checkbox" checked={preferences?.normalEnabled === false} disabled={!preferences || saving}
-      onChange={event => update('normalEnabled', !event.target.checked)} /><span className="proxy-switch-text">{t("关闭普通公告")}<em>{t("开启后不读取、不展示普通公告；软件升级后也保持关闭")}</em></span></label>
+      onChange={event => update('normalEnabled', !event.target.checked)} /><span className="proxy-switch-text">{t("关闭普通公告")}<em>{t("开启后不再接收日常通知与公告，保持免打扰")}</em></span></label>
     <label className="proxy-switch-row"><input type="checkbox" checked={preferences?.emergencyEnabled === false} disabled={!preferences || saving}
-      onChange={event => update('emergencyEnabled', !event.target.checked)} /><span className="proxy-switch-text">{t("关闭紧急公告")}<em>{t("开启后停止紧急公告检查；重新接收后，已提醒过的公告也不会重复")}</em></span></label>
+      onChange={event => update('emergencyEnabled', !event.target.checked)} /><span className="proxy-switch-text">{t("关闭紧急公告")}<em>{t("开启后不再接收紧急公告；重新开启时不会重复提醒已有公告")}</em></span></label>
     <p className="settings-hint">{t("设置即时生效。重要通知每条仅提醒一次，不会被打扰。")}</p>
     <button type="button" className="btn btn-outline" disabled={reading} aria-busy={reading} onClick={viewCurrent}>{t(reading ? '正在读取公告…' : '查看当前公告')}</button>
     <p className="settings-hint">{t("可随时点击查看最新发布的公告内容。")}</p>

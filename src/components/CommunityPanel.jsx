@@ -66,11 +66,11 @@ export default function CommunityPanel({ seriesId, episodeId, title, cover, chil
     ? `本次展示 ${items.length} 条公开评论，公开总数 ${count(reviews.total)}；更多评论可在红果 App 查看。`
     : `本次展示 ${items.length} 条公开评论；更多评论可在红果 App 查看。`;
 
-  return <section className="community-panel" aria-label={t("公开剧评与本机收藏")}>
+  return <section className="community-panel" aria-label={t("公开剧评与收藏")}>
     <div className="community-heading">
-      <div><h3>{t("剧评与收藏")}</h3><p>{t("公开评论，只读。收藏仅保存在本机。")}</p></div>
+      <div><h3>{t("剧评与收藏")}</h3><p>{t("精彩剧评与个人收藏")}</p></div>
       <div className="community-actions">
-        {t(children)}
+        {children}
         <button type="button" className="btn btn-outline" onClick={async () => {
           try {
             await navigator.clipboard.writeText(`https://hongguoduanju.com/detail?series_id=${encodeURIComponent(id)}`);
@@ -91,7 +91,7 @@ export default function CommunityPanel({ seriesId, episodeId, title, cover, chil
           if (opened && !episodeScope) setOpenedSeries('');
           else { setScope('series'); setOpenedSeries(id); }
         }}>{t(opened && !episodeScope ? '收起剧评' : '查看公开剧评')}</button>
-        {trailingAction && <div className="community-action-trailing">{t(trailingAction)}</div>}
+        {trailingAction && <div className="community-action-trailing">{trailingAction}</div>}
       </div>
     </div>
     {library.error && <p className="community-error" role="alert">{t(library.error)}</p>}

@@ -383,7 +383,7 @@ function DownloadManager({ onNavigate, active = true }) {
         + (mergeDeleteSources ? '；成功后删除已合并分集' : ''));
       if (res.codecWarning) showToast(res.codecWarning, 'error');
     } catch (e) {
-      if (dialogGeneration === mergeDialogGenerationRef.current) setMergeError('合并异常: ' + e.message);
+      if (dialogGeneration === mergeDialogGenerationRef.current) setMergeError('合并失败：' + (e.message || '请重试'));
     } finally {
       mergeRequestRef.current = false;
       setMerging(false);
@@ -852,7 +852,7 @@ function DownloadManager({ onNavigate, active = true }) {
                 <input type="checkbox" checked={mergeDeleteSources} onChange={event => setMergeDeleteSources(event.target.checked)} />
                 <span>{t("合并成功后删除已合并分集")}</span>
               </label>
-              <p>{t("开启后会永久删除本次已合并的分集视频和下载记录；合并失败、取消或输出未成功时不会删除。")}</p>
+              <p>{t("合并完成后自动清理分集文件，释放存储空间；若合并未完成则不会删除。")}</p>
               {mergeError && <p className="alert-error" role="alert">{t(mergeError)}</p>}
             </div>
             <div className="player-confirm-foot">

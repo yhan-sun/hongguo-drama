@@ -75,7 +75,7 @@ export default function CustomSources({ active = true }) {
 
   return <section className="settings-card custom-sources" aria-labelledby="custom-sources-title">
     <div className="custom-sources-heading"><Globe size={18} /><h3 id="custom-sources-title">{t("自定义播放源")}</h3></div>
-    <p className="settings-hint">{t("支持接入标准苹果 CMS V10 接口（MP4 / M3U8 直链）。保存后可在发现与搜索中无缝切换。")}</p>
+    <p className="settings-hint">{t("支持添加第三方片源（苹果 CMS V10 标准接口）。保存后可在发现与搜索中观看。")}</p>
     <form onSubmit={event => { event.preventDefault(); persist(draft); }}>
       <fieldset disabled={!!busy} className="custom-source-form">
         <label>{t("来源名称")}<input className="input-field" value={draft.name} maxLength={60} required placeholder={t("例如：我的片库")} onChange={event => patch('name', event.target.value)} /></label>

@@ -368,7 +368,7 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
                 <span>{t(quality === 'compat' ? (mobile ? '兼容片源（H.264优先）' : '老电脑（H.264优先）') : quality === 'auto' ? (supportsOnlineQuality ? '自动（1080P优先）' : '由片源决定') : quality.toUpperCase())}</span><span aria-hidden="true">{t(onlineQuality === quality ? '✓' : '')}</span>
               </button>)}
             </div>
-            <p className="player-quality-hint">{t(supportsOnlineQuality ? mobile ? '自动优先1080P，失败后尝试720P与兼容片源；手动指定画质时保持固定。兼容片源优先H.264，画质可能降低。安卓使用系统解码，ByteVC2转换暂未接入。切换保留进度和暂停状态。' : '自动优先1080P，失败后尝试720P和兼容片源。老电脑优先H.264，画质可能降低；开启兼容模式时，已知H.265片源提前转码，CPU较慢仍需等待。手动720P / 1080P保持固定画质；切换保留进度和暂停状态。' : '此来源的清晰度由片源决定，暂不支持指定画质。当前画面分辨率不代表来源的最高画质。')}</p>
+            <p className="player-quality-hint">{t(supportsOnlineQuality ? '自动优先选择 1080P 高清，播放不畅时自动为您切换；也可手动选择固定清晰度。切换分集会保留播放进度。' : '当前剧集清晰度由片源提供，切换分集会保留播放进度。')}</p>
           </div>}
         </div>
         <div className="player-controls-volume">
