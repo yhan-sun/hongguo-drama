@@ -2507,21 +2507,6 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           pictureMode={pictureMode} onPictureModeChange={changePictureMode} rate={playbackRate} onRateChange={changePlaybackRate} onError={showToast}
           onToggleDrawer={() => setDrawerOpen(v => !v)} drawerCollapsed={drawerCollapsed}
           onDrawerMouseEnter={handleDrawerMouseEnter} onDrawerMouseLeave={handleDrawerMouseLeave} isDrawerVisible={isDrawerVisible} />
-        {!mobile && !isDrawerVisible && (
-          <div
-            className="player-right-hover-trigger"
-            onMouseEnter={handleDrawerMouseEnter}
-            onMouseLeave={handleDrawerMouseLeave}
-            onClick={() => { setDrawerOpen(true); setDrawerHovered(false); }}
-            title={t("选集与剧评 (鼠标移入展开)")}
-            aria-label={t("展开选集与剧评")}
-          >
-            <div className="player-right-hover-pill">
-              <ChevronLeft size={13} />
-              <span>{t("选集")}</span>
-            </div>
-          </div>
-        )}
         {!canPlay && (
           <div className={`player-placeholder${holdingFrame && !playbackError ? ' player-placeholder-over-frame' : ''}`} style={{ position: 'absolute', inset: 0, zIndex: 3 }}>
             <div className="player-placeholder-card">
@@ -2747,51 +2732,49 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                     <span>{t("批量下载")}</span>
                     <ChevronDown size={11} />
                   </button>
-                  {batchDownloadOpen && (
-                    <div className="batch-download-dropdown">
-                      <button className="batch-item" onClick={() => { downloadMissing(); setBatchDownloadOpen(false); }}>
-                        <Download size={13} />
-                        <span>{t("下载未完成集")}</span>
-                      </button>
-                      <button
-                        className="batch-item"
-                        disabled={qualityLoading || !current || followingDownload}
-                        onClick={() => { downloadFollowing(); setBatchDownloadOpen(false); }}
-                      >
-                        <Download size={13} />
-                        <span>{t(followingDownload ? '提交中…' : '从本集下载至末集')}</span>
-                      </button>
-                      <button
-                        className="batch-item"
-                        disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
-                        onClick={() => { downloadMissing(5); setBatchDownloadOpen(false); }}
-                      >
-                        <Download size={13} />
-                        <span>{t("下载后 5 集")}</span>
-                      </button>
-                      <button
-                        className="batch-item"
-                        disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
-                        onClick={() => { downloadMissing(10); setBatchDownloadOpen(false); }}
-                      >
-                        <Download size={13} />
-                        <span>{t("下载后 10 集")}</span>
-                      </button>
-                      <div className="batch-dropdown-divider" />
-                      <button
-                        className="batch-item batch-merge-item"
-                        disabled={merging || playableCount === 0}
-                        onClick={() => { openMergeDialog(); setBatchDownloadOpen(false); }}
-                      >
-                        <Layers size={13} />
-                        <span>{t(merging ? '提交中...' : '合并导出全集')}</span>
-                      </button>
-                      <div className="batch-dropdown-divider" />
-                      <div className="batch-nas-wrapper">
-                        <NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />
-                      </div>
+                  <div className="batch-download-dropdown" style={{ display: batchDownloadOpen ? undefined : 'none' }}>
+                    <button className="batch-item" onClick={() => { downloadMissing(); setBatchDownloadOpen(false); }}>
+                      <Download size={13} />
+                      <span>{t("下载未完成集")}</span>
+                    </button>
+                    <button
+                      className="batch-item"
+                      disabled={qualityLoading || !current || followingDownload}
+                      onClick={() => { downloadFollowing(); setBatchDownloadOpen(false); }}
+                    >
+                      <Download size={13} />
+                      <span>{t(followingDownload ? '提交中…' : '从本集下载至末集')}</span>
+                    </button>
+                    <button
+                      className="batch-item"
+                      disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
+                      onClick={() => { downloadMissing(5); setBatchDownloadOpen(false); }}
+                    >
+                      <Download size={13} />
+                      <span>{t("下载后 5 集")}</span>
+                    </button>
+                    <button
+                      className="batch-item"
+                      disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
+                      onClick={() => { downloadMissing(10); setBatchDownloadOpen(false); }}
+                    >
+                      <Download size={13} />
+                      <span>{t("下载后 10 集")}</span>
+                    </button>
+                    <div className="batch-dropdown-divider" />
+                    <button
+                      className="batch-item batch-merge-item"
+                      disabled={merging || playableCount === 0}
+                      onClick={() => { openMergeDialog(); setBatchDownloadOpen(false); }}
+                    >
+                      <Layers size={13} />
+                      <span>{t(merging ? '提交中...' : '合并导出全集')}</span>
+                    </button>
+                    <div className="batch-dropdown-divider" />
+                    <div className="batch-nas-wrapper">
+                      <NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 

@@ -40,8 +40,23 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
   const navigationKeysRef = useRef(new Set());
   const pointerRef = useRef(null);
   const idleDeadlineRef = useRef(0);
+  const [episodePage, setEpisodePage] = useState(0);
+  const [seekHover, setSeekHover] = useState({ visible: false, time: 0, x: 0 });
+  const episodeHoverTimerRef = useRef(null);
   const expanded = fullscreen || windowFill;
   const nextEpisode = episodes.find(episode => episode.vid_index > currentIndex && !episode.locked);
+
+  const openEpisodePopover = () => {
+    clearTimeout(episodeHoverTimerRef.current);
+    setMenuOpen(false); setDanmakuOpen(false);
+    setSelectionPanel('episodes');
+  };
+  const closeEpisodePopover = () => {
+    clearTimeout(episodeHoverTimerRef.current);
+    episodeHoverTimerRef.current = setTimeout(() => {
+      setSelectionPanel(panel => panel === 'episodes' ? null : panel);
+    }, 220);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -304,7 +319,45 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
         <time className="player-clock" dateTime={clock} aria-label={t(`当前时间 ${clock}`)}>{t(clock)}</time>
       </div>}
       <div ref={controlsRef} className="player-controls-bar">
-      <input className="player-controls-seek" type="range" aria-label={t("播放进度")} aria-valuetext={`${formatTime(media.time)} / ${formatTime(media.duration)}`} min="0" max={media.duration || 0} step="0.1" value={Math.min(media.time, media.duration)} disabled={!available || !media.duration} onChange={seek} />
+      <div
+        className="player-seek-container"
+        onMouseMove={(event) => {
+          if (!media.duration) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (rect.width <= 0) return;
+          const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+          setSeekHover({ visible: true, time: ratio * media.duration, x: event.clientX - rect.left });
+        }}
+        onMouseLeave={() => setSeekHover(s => s.visible ? { ...s, visible: false } : s)}
+      >
+        <div className="player-seek-track">
+          <div
+            className="player-seek-fill"
+            style={{ width: `${media.duration > 0 ? Math.min(100, Math.max(0, (media.time / media.duration) * 100)) : 0}%` }}
+          />
+          <div
+            className="player-seek-thumb"
+            style={{ left: `${media.duration > 0 ? Math.min(100, Math.max(0, (media.time / media.duration) * 100)) : 0}%` }}
+          />
+        </div>
+        {seekHover.visible && media.duration > 0 && (
+          <div className="player-seek-tooltip" style={{ left: seekHover.x }}>
+            {formatTime(seekHover.time)}
+          </div>
+        )}
+        <input
+          className="player-controls-seek"
+          type="range"
+          aria-label={t("播放进度")}
+          aria-valuetext={`${formatTime(media.time)} / ${formatTime(media.duration)}`}
+          min="0"
+          max={media.duration || 0}
+          step="0.1"
+          value={Math.min(media.time, media.duration)}
+          disabled={!available || !media.duration}
+          onChange={seek}
+        />
+      </div>
       <div className="player-controls-row">
         <button type="button" data-player-control aria-label={t(media.paused ? '播放' : '暂停')} title={t(`播放/暂停（${formatShortcut(shortcuts.play, t)}）`)} disabled={!available} onClick={togglePlay}>{media.paused ? <Play size={18} /> : <Pause size={18} />}</button>
         <button type="button" data-player-control aria-label={t("下一集")} title={t(`下一集（${formatShortcut(shortcuts.next, t)}）`)} disabled={!nextEpisode} onClick={() => nextEpisode && onEpisodeChange(nextEpisode.vid_index)}>
@@ -346,14 +399,12 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
         </div>}
         <div className="player-controls-selection" data-player-menu ref={selectionRef}>
           {!!episodes.length && <button type="button" ref={episodeButtonRef} aria-label={t("选集")} aria-haspopup="dialog" aria-expanded={episodesOpen || selectionPanel === 'episodes' || isDrawerVisible}
-            className={isDrawerVisible ? 'player-controls-drawer-open' : ''}
-            onMouseEnter={onDrawerMouseEnter}
-            onMouseLeave={onDrawerMouseLeave}
+            className={selectionPanel === 'episodes' || isDrawerVisible ? 'player-controls-drawer-open' : ''}
+            onMouseEnter={openEpisodePopover}
+            onMouseLeave={closeEpisodePopover}
             onClick={() => {
               if (fullscreen) {
                 toggleSelection('episodes');
-              } else if (onToggleDrawer) {
-                onToggleDrawer();
               } else if (mobile && !fullscreen && onOpenEpisodes) {
                 onOpenEpisodes();
               } else {
@@ -362,10 +413,38 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
             }}>{t("选集")}</button>}
           {!mobile && onQualityChange && <button type="button" ref={qualityButtonRef} aria-label={t("清晰度")} aria-haspopup="dialog" aria-expanded={selectionPanel === 'quality'}
             onClick={() => toggleSelection('quality')}>{t(onlineQuality === 'compat' ? (mobile ? '兼容' : '老电脑') : onlineQuality === 'auto' ? (media.width > 0 && media.height > 0 ? `${Math.min(media.width, media.height)}P` : '自动') : onlineQuality.toUpperCase())}</button>}
-          {selectionPanel === 'episodes' && <div className="player-controls-popover player-episode-popover" role="dialog" aria-label={t("选集面板")} style={{ maxHeight: selectionHeight }}>
-            <div className="player-popover-heading"><strong>{t("选集")}</strong><span>{t("第 {0} 集 / 共 {1} 集", [currentIndex, episodes.length])}</span></div>
+          {selectionPanel === 'episodes' && <div
+            className="player-controls-popover player-episode-popover"
+            role="dialog"
+            aria-label={t("选集面板")}
+            style={{ maxHeight: selectionHeight }}
+            onMouseEnter={() => clearTimeout(episodeHoverTimerRef.current)}
+            onMouseLeave={closeEpisodePopover}
+          >
+            <div className="player-popover-heading">
+              <strong>{t("选集")}</strong>
+              <span>{t("第 {0} 集 / 共 {1} 集", [currentIndex, episodes.length])}</span>
+            </div>
+            {episodes.length > 50 && (
+              <div className="player-episode-tabs">
+                {Array.from({ length: Math.ceil(episodes.length / 50) }, (_, idx) => {
+                  const start = idx * 50 + 1;
+                  const end = Math.min((idx + 1) * 50, episodes.length);
+                  return (
+                    <button
+                      type="button"
+                      key={idx}
+                      className={`player-episode-tab ${episodePage === idx ? 'tab-active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setEpisodePage(idx); }}
+                    >
+                      {start}-{end}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="player-episode-grid">
-              {episodes.map(episode => <button type="button" key={episode.vid_index} aria-label={t(`播放第 ${episode.vid_index} 集`)} aria-current={episode.vid_index === currentIndex ? 'true' : undefined}
+              {(episodes.length > 50 ? episodes.slice(episodePage * 50, (episodePage + 1) * 50) : episodes).map(episode => <button type="button" key={episode.vid_index} aria-label={t(`播放第 ${episode.vid_index} 集`)} aria-current={episode.vid_index === currentIndex ? 'true' : undefined}
                 disabled={episode.locked} title={t(episode.locked ? '来源未开放本集' : `播放第 ${episode.vid_index} 集`)}
                 onClick={() => { setSelectionPanel(null); episodeButtonRef.current?.focus(); onEpisodeChange(episode.vid_index); }}>
                 {t(episode.vid_index)}{episode.locked && <small>{t("未开放")}</small>}
@@ -376,12 +455,12 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
             <div className="player-popover-heading"><strong>{t("清晰度")}</strong></div>
             <p className="player-quality-current">{t("当前画面：")}{t(media.width > 0 && media.height > 0 ? `${Math.min(media.width, media.height)}P（${media.width} × ${media.height}）` : '等待视频信息')}</p>
             <div role="group" aria-label={t("选择播放清晰度")}>
-              {(supportsOnlineQuality ? ['auto', 'compat', '720p', '1080p'] : ['auto']).map(quality => <button type="button" key={quality} aria-label={t('选择 {0}', [t(quality === 'compat' ? '老电脑' : quality === 'auto' ? '自动' : quality.toUpperCase())])}
+              {(supportsOnlineQuality ? ['auto', '1080p', '720p', 'compat'] : ['auto']).map(quality => <button type="button" key={quality} aria-label={t('选择 {0}', [t(quality === 'compat' ? (mobile ? '兼容' : '兼容片源') : quality === 'auto' ? '自动' : quality.toUpperCase())])}
                 aria-pressed={onlineQuality === quality} onClick={() => { setSelectionPanel(null); qualityButtonRef.current?.focus(); if (quality !== onlineQuality) onQualityChange(quality); }}>
                 <span>{t(quality === 'compat' ? (mobile ? '兼容片源（H.264优先）' : '老电脑（H.264优先）') : quality === 'auto' ? (supportsOnlineQuality ? '自动（1080P优先）' : '由片源决定') : quality.toUpperCase())}</span><span aria-hidden="true">{t(onlineQuality === quality ? '✓' : '')}</span>
               </button>)}
             </div>
-            <p className="player-quality-hint">{t(supportsOnlineQuality ? '自动优先选择 1080P 高清，播放不畅时自动为您切换；也可手动选择固定清晰度。切换分集会保留播放进度。' : '当前剧集清晰度由片源提供，切换分集会保留播放进度。')}</p>
+            <p className="player-quality-hint">{t(supportsOnlineQuality ? mobile ? '自动优先1080P，失败后尝试720P与兼容片源；手动指定画质时保持固定。兼容片源优先H.264，画质可能降低。安卓使用系统解码，ByteVC2转换暂未接入。切换保留进度和暂停状态。' : '自动优先1080P，失败后尝试720P和兼容片源。老电脑优先H.264，画质可能降低；开启兼容模式时，已知H.265片源提前转码，CPU较慢仍需等待。手动720P / 1080P保持固定画质；切换保留进度和暂停状态。' : '此来源的清晰度由片源决定，暂不支持指定画质。当前画面分辨率不代表来源的最高画质。')}</p>
           </div>}
         </div>
         <div className="player-controls-volume">
