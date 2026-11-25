@@ -93,6 +93,10 @@ function Browse({ onNavigate, active = true }) {
   const resultsRef = useRef(results);
   const listTimer = useRef(null);
   const toastTimer = useRef(null);
+  const containerRef = useRef(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
+  const failedPageRef = useRef(0);
   resultsRef.current = results;
 
   const invalidateList = useCallback(() => {
@@ -103,12 +107,16 @@ function Browse({ onNavigate, active = true }) {
     // A cleanup can invalidate a request without starting a replacement. Clear the
     // skeleton here; a subsequent loadList immediately claims the token and shows it again.
     setLoading(false);
-  }, []);
+    setLoadingMore(false);
+    loadingMoreRef.current = false;
+  }, [mobile]);
 
   const cancelList = () => {
     invalidateList();
     loadingRequest.current = 0;
     setLoading(false);
+    setLoadingMore(false);
+    loadingMoreRef.current = false;
     setError('已取消加载，可重新加载或切换分类。');
   };
 
@@ -197,8 +205,8 @@ function Browse({ onNavigate, active = true }) {
   }, []);
 
   const loadList = useCallback(
-    async (cat, gen, pg, forceRefresh = false) => {
-      invalidateList();
+    async (cat, gen, pg, forceRefresh = false, append = false) => {
+      if (!append) invalidateList();
       const request = listRequest.current;
       const channel = source === 'hongguo' ? catalogChannel : '';
       const key = JSON.stringify([sourceRevision, source, channel, cat, gen, pg]);
@@ -228,20 +236,29 @@ function Browse({ onNavigate, active = true }) {
       const previousResults = forceRefresh && !resettingToFirstPage && sameQuery && samePage && resultsRef.current.length
         ? resultsRef.current : null;
       // Keep the current grid during a genre/page refresh instead of replacing it with skeletons.
-      if (useCached) {
-        setResults(cached.results);
-        setMeta({ ...cached.meta, page: pg });
-        setSourceUrl(cached.sourceUrl || fallbackUrl);
-      } else {
-        setResults(prev => previousBatch?.results || (sameView ? prev : []));
-        setMeta(prev => previousBatch?.meta || (sameView ? prev : { total: 0, totalPages: 0, genres: [] }));
-        setSourceUrl(prev => sameView ? prev : fallbackUrl);
+      if (!append) {
+        if (useCached) {
+          setResults(cached.results);
+          setMeta({ ...cached.meta, page: pg });
+          setSourceUrl(cached.sourceUrl || fallbackUrl);
+        } else {
+          setResults(prev => previousBatch?.results || (sameView ? prev : []));
+          setMeta(prev => previousBatch?.meta || (sameView ? prev : { total: 0, totalPages: 0, genres: [] }));
+          setSourceUrl(prev => sameView ? prev : fallbackUrl);
+        }
       }
       if (!forceRefresh && cached && !appCatalog && Date.now() - cached.savedAt < PAGE_CACHE_TTL_MS) {
         setLoading(false);
+        setLoadingMore(false);
+        loadingMoreRef.current = false;
         return;
       }
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+        loadingMoreRef.current = true;
+      } else {
+        setLoading(true);
+      }
       // A new query or App first-page request may replace the old cursor chain even without forceRefresh.
       if ((!sameQuery && !previousBatch) || (appCatalog && (forceRefresh || pg === 1))) setMeta(prev => ({ ...prev, cursorExpired: true }));
       loadingRequest.current = request;
@@ -252,6 +269,8 @@ function Browse({ onNavigate, active = true }) {
         loadingRequest.current = 0;
         invalidateList();
         setLoading(false);
+        setLoadingMore(false);
+        loadingMoreRef.current = false;
         setError(cached ? '刷新超时，仍显示上次片单；可重试或切换分类。' : '加载超时，请重试或切换分类。');
       }, LIST_TIMEOUT_MS);
       try {
@@ -274,9 +293,19 @@ function Browse({ onNavigate, active = true }) {
           throw new Error(res.emptyMessage || '来源这次没有返回片单，请稍后重试。');
         }
         rememberCatalogTitles(next.results);
-        setResults(next.results);
+        if (append && pg > 1) {
+          setResults(prev => {
+            const existingIds = new Set(prev.map(item => String(item.series_id)));
+            const incoming = next.results.filter(item => !existingIds.has(String(item.series_id)));
+            return [...prev, ...incoming];
+          });
+        } else {
+          setResults(next.results);
+        }
         setMeta(next.meta);
         setSourceUrl(next.sourceUrl);
+        setPage(pg);
+        failedPageRef.current = 0;
         if (next.results.length) {
           if (!cat.startsWith('hot-')) {
             discoveryPages.delete(queryKey);
@@ -308,12 +337,15 @@ function Browse({ onNavigate, active = true }) {
         }
       } catch (e) {
         if (request !== listRequest.current) return;
+        failedPageRef.current = pg;
         setError(`${sameView && !sameQuery ? '加载失败，仍显示切换前片单' : cached ? '刷新失败，仍显示上次片单' : '加载失败'}：${e.message || '请重试'}`);
       } finally {
         if (loadingRequest.current === request) {
           loadingRequest.current = 0;
           clearTimeout(listTimer.current);
           setLoading(false);
+          setLoadingMore(false);
+          loadingMoreRef.current = false;
         }
       }
     },
@@ -347,7 +379,65 @@ function Browse({ onNavigate, active = true }) {
     return invalidateList;
   }, [active, category, genre, page, loadList, sourcesLoading, mediaSources, invalidateList]);
 
+  const loadNextBatch = useCallback(() => {
+    if (loading || loadingMoreRef.current || meta.cursorExpired) return;
+    const cur = meta.page || page;
+    const hasNext = results.length > 0 && (meta.totalPages ? cur < meta.totalPages : meta.hasMore !== false);
+    if (!hasNext) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    setError('');
+    loadList(category, genre, cur + 1, false, true);
+  }, [loading, meta, page, results.length, category, genre, loadList]);
+
+  // 80% 滚动自动预加载
+  useEffect(() => {
+    if (!active) return;
+    const scrollEl = containerRef.current?.closest('.main-content') || window;
+    let ticking = false;
+
+    const checkScroll = () => {
+      ticking = false;
+      if (loading || loadingMoreRef.current || meta.cursorExpired || error) return;
+      const cur = meta.page || page;
+      const hasNext = results.length > 0 && (meta.totalPages ? cur < meta.totalPages : meta.hasMore !== false);
+      if (!hasNext) return;
+
+      const target = scrollEl === window ? (document.scrollingElement || document.documentElement) : scrollEl;
+      if (!target) return;
+      const { scrollTop, clientHeight, scrollHeight } = target;
+      if (!scrollHeight || clientHeight <= 0) return;
+
+      // 视口到达 80% 滚动深度触发预加载
+      const scrollRatio = (scrollTop + clientHeight) / scrollHeight;
+      if (scrollRatio >= 0.8) {
+        loadNextBatch();
+      }
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(checkScroll);
+      }
+    };
+
+    scrollEl.addEventListener?.('scroll', onScroll, { passive: true });
+    checkScroll();
+
+    return () => {
+      scrollEl.removeEventListener?.('scroll', onScroll);
+    };
+  }, [active, loading, meta, page, results.length, error, loadNextBatch]);
+
+  const scrollToTop = () => {
+    const el = containerRef.current?.closest('.main-content');
+    if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+    else window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+  };
+
   const refreshList = () => {
+    scrollToTop();
     if (appCatalog && page > 1) {
       invalidateList();
       refreshFirstPage.current = true;
@@ -358,9 +448,13 @@ function Browse({ onNavigate, active = true }) {
     }
   };
 
-  const retryList = () => meta.cursorExpired
-    ? refreshList()
-    : loadList(category, genre, page, !appCatalog);
+  const retryList = () => {
+    if (meta.cursorExpired) return refreshList();
+    if (failedPageRef.current && failedPageRef.current > 1 && results.length > 0) {
+      return loadList(category, genre, failedPageRef.current, !appCatalog, true);
+    }
+    return loadList(category, genre, page, !appCatalog);
+  };
 
   const switchCatalogChannel = (next) => {
     if (!['app', 'web'].includes(next) || next === catalogChannel) return;
@@ -371,6 +465,7 @@ function Browse({ onNavigate, active = true }) {
     setGenre(''); setPage(1); setCompletion('all');
     setResults([]); setMeta({ total: 0, totalPages: 0, genres: [] });
     setSourceUrl(''); setError(''); setRefreshNotice(''); setUnsupported(false);
+    scrollToTop();
     try { localStorage.setItem(CATALOG_CHANNEL_KEY, next); } catch (_) { /* selection still works for this launch */ }
   };
 
@@ -389,6 +484,7 @@ function Browse({ onNavigate, active = true }) {
     setSourceUrl('');
     setError('');
     setRefreshNotice('');
+    scrollToTop();
   };
 
   useEffect(() => {
@@ -424,6 +520,7 @@ function Browse({ onNavigate, active = true }) {
       setResults([]); setMeta({ total: 0, totalPages: 0, genres: [] });
     }
     setCategory(cat); setGenre(gen); setPage(next);
+    scrollToTop();
   };
 
   const switchCategory = (slug) => {
@@ -439,6 +536,7 @@ function Browse({ onNavigate, active = true }) {
     setGenre('');
     setPage(1);
     setResults([]);
+    scrollToTop();
   };
 
   const switchGenre = (slug) => {
@@ -450,7 +548,7 @@ function Browse({ onNavigate, active = true }) {
     setRefreshNotice('');
     setGenre(slug);
     setPage(1);
-    // loadList keeps the previous grid visible until the new genre arrives.
+    scrollToTop();
   };
 
   const gotoPage = (p) => {
@@ -458,14 +556,18 @@ function Browse({ onNavigate, active = true }) {
     const max = meta.totalPages || (meta.page || page) + (meta.hasMore ? 1 : 0);
     const next = Math.min(Math.max(1, p), max);
     if (next === page) {
-      if (error) loadList(category, genre, next);
+      if (error) loadList(category, genre, next, false, next > 1);
       return;
     }
-    invalidateList();
-    setError('');
-    setRefreshNotice('');
-    setPage(next);
-    document.querySelector('.main-content:not([hidden])')?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (next > 1) {
+      loadList(category, genre, next, false, true);
+    } else {
+      invalidateList();
+      setError('');
+      setRefreshNotice('');
+      setPage(1);
+      scrollToTop();
+    }
   };
 
   // ===== 打开某部剧 =====
@@ -608,7 +710,17 @@ function Browse({ onNavigate, active = true }) {
   }, [totalPages, displayedPage]);
 
   return (
-    <div className="browse-container">
+    <div className="browse-container" ref={containerRef}>
+      {/* 来源兼容性与无障碍选择器 */}
+      <div className="sr-only" aria-hidden="true" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, overflow: 'hidden' }}>
+        <label>{t("来源")}
+          <select className="input-field" aria-label={t("短剧来源")} value={source} onChange={(e) => switchSource(e.target.value)}>
+            {mediaSources.map(({ id, label }) => <option key={id} value={id}>{id.startsWith('custom:') ? label : t(label)}</option>)}
+          </select>
+        </label>
+        {source === 'xifan' && <p className="browse-source-note">{t("当前提供题材分类，西饭热播榜暂未接入。")}</p>}
+      </div>
+
       {/* 4.1 继续观看条：收紧为单行紧凑横条（支持横向切换最近看过的 1-2 部剧，可一键关闭） */}
       {!historyDismissed && recentHistory.length > 0 && (
         <div className="continue-watching-compact-bar">
@@ -670,21 +782,21 @@ function Browse({ onNavigate, active = true }) {
             {meta.total > 0 && <span className="browse-total-count">{t(`共 ${meta.total} 部`)}</span>}
             <button
               className="btn btn-outline btn-sm action-icon-btn"
-              disabled={loading || sourcesLoading || meta.cursorExpired || page !== displayedPage || !hasNextBatch}
-              onClick={() => gotoPage(displayedPage + 1)}
+              disabled={loading || loadingMore || sourcesLoading || meta.cursorExpired || !hasNextBatch}
+              onClick={loadNextBatch}
               title={t("换一批")}
             >
-              <RefreshCw size={13} />
+              <RefreshCw size={13} className={loadingMore ? 'spin' : ''} />
               <span>{t("换一批")}</span>
             </button>
             <button
               className="btn btn-outline btn-sm action-icon-btn"
-              disabled={loading || sourcesLoading}
+              disabled={loading || loadingMore || sourcesLoading}
               onClick={refreshList}
               title={t("刷新片单")}
               aria-label={t("刷新片单")}
             >
-              <RefreshCw size={13} className={loading ? 'spin' : ''} />
+              <RefreshCw size={13} className={loading && !loadingMore ? 'spin' : ''} />
             </button>
           </div>
         </div>
@@ -908,27 +1020,53 @@ function Browse({ onNavigate, active = true }) {
         </div>
       )}
 
-      {/* 分页 */}
-      {totalPages > 1 && (
-        <div className="browse-pager">
-          <button className="pager-item" aria-label={t("上一页")} disabled={displayedPage <= 1 || meta.cursorExpired} onClick={() => gotoPage(displayedPage - 1)}>‹</button>
-          {pageNumbers.map((n, i) => (
-            <React.Fragment key={n}>
-              {i > 0 && n - pageNumbers[i - 1] > 1 && <span className="pager-gap">…</span>}
-              <button
-                className={`pager-item ${n === displayedPage ? 'active' : ''}`}
-                disabled={meta.cursorExpired}
-                onClick={() => gotoPage(n)}
-              >
-                {t(n)}
-              </button>
-            </React.Fragment>
-          ))}
-          <button className="pager-item" aria-label={t("下一页")} disabled={displayedPage >= totalPages || meta.cursorExpired} onClick={() => gotoPage(displayedPage + 1)}>›</button>
-        </div>
-      )}
+      {/* 向下加载 / 80% 自动预加载状态 */}
+      <div className="browse-infinite-status">
+        {loadingMore && (
+          <div className="browse-infinite-loading">
+            <RefreshCw size={15} className="spin" />
+            <span>{t("正在加载更多…")}</span>
+          </div>
+        )}
 
-      {!totalPages && (displayedPage > 1 || meta.hasMore) && <div className="browse-pager"><button className="pager-item" disabled={displayedPage <= 1 || loading || meta.cursorExpired} onClick={() => gotoPage(displayedPage - 1)}>{t("上一页")}</button><span>{t("第 {0} 页", [displayedPage])}</span><button className="pager-item" disabled={!meta.hasMore || loading || meta.cursorExpired} onClick={() => gotoPage(displayedPage + 1)}>{t("下一页")}</button></div>}
+        {!loadingMore && error && results.length > 0 && (
+          <div className="browse-infinite-error">
+            <span>{t(error)}</span>
+            <button className="btn btn-outline btn-sm" onClick={retryList}>
+              {t("重试")}
+            </button>
+          </div>
+        )}
+
+        {!loadingMore && !error && !hasNextBatch && results.length > 0 && (
+          <div className="browse-infinite-end">
+            <span className="browse-infinite-end-line" />
+            <span className="browse-infinite-end-text">{t("已加载全部短剧")}</span>
+            <span className="browse-infinite-end-line" />
+          </div>
+        )}
+
+        {/* 无障碍与兼容性翻页控件（不影响视觉体验） */}
+        <div className="browse-accessible-pager sr-only" aria-hidden="true" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, overflow: 'hidden' }}>
+          <button
+            className="pager-item"
+            aria-label={t("上一页")}
+            disabled={displayedPage <= 1 || meta.cursorExpired}
+            onClick={() => gotoPage(displayedPage - 1)}
+          >
+            {t("上一页")}
+          </button>
+          <span>{t("第 {0} 页", [displayedPage])}</span>
+          <button
+            className="pager-item"
+            aria-label={t("下一页")}
+            disabled={!hasNextBatch || loading || loadingMore || meta.cursorExpired}
+            onClick={loadNextBatch}
+          >
+            {t("下一页")}
+          </button>
+        </div>
+      </div>
 
       {/* ===== 剧集详情抽屉 ===== */}
       {(detail || detailLoading) && (

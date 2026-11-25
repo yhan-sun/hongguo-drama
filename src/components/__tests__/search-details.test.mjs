@@ -47,7 +47,7 @@ function mount(file, props, api) {
     '../i18n': i18n,
     react, './HongguoDownload.css': {}, './SearchPanel': 'SearchPanel',
     './Browse.css': {}, './useDialogKeyboard': () => {},
-    './icons': Object.fromEntries(['Film', 'Download', 'CheckSquare', 'Square', 'RefreshCw', 'Folder', 'Link2', 'Search', 'Play', 'ExternalLink', 'Check', 'X'].map(name => [name, name])),
+    './icons': Object.fromEntries(['Film', 'Download', 'CheckSquare', 'Square', 'RefreshCw', 'Folder', 'Link2', 'Search', 'Play', 'ExternalLink', 'Check', 'X', 'Clock', 'Sliders', 'Info', 'ChevronDown'].map(name => [name, name])),
     './useMediaSources': () => sources,
     './mediaSourcesModel.mjs': { mediaSourceLabel: () => '红果' },
     './searchRanking.mjs': { rankSearchResults },
@@ -229,4 +229,36 @@ test('a stale batch download success does not close a newer drawer or navigate',
   page.render();
   assert.equal(navigated, null, 'stale success must not force navigation');
   assert.ok(page.find(node => node.type === 'span' && node.children?.includes('《剧2》')), 'stale success must not close the newer drawer');
+});
+
+test('Browse downward infinite scroll preloads next page and appends without duplicates', async () => {
+  const pages = [];
+  const series = (id, title) => ({ series_id: id, series_title: title, cover: '', episode_label: '1集' });
+  const api = {
+    browseCategories: async () => [{ slug: 'real-drama', label: '真人剧' }],
+    browseList: async (options) => {
+      pages.push(options.page);
+      if (options.page === 1) {
+        return { success: true, results: [series('s1', '短剧一'), series('s2', '短剧二')], total: 4, totalPages: 2, hasMore: true, genres: [] };
+      }
+      return { success: true, results: [series('s2', '短剧二重复'), series('s3', '短剧三')], total: 4, totalPages: 2, hasMore: false, genres: [] };
+    },
+    getSeriesProgress: async () => ({ success: true, progress: {} }),
+    getWatchHistory: async () => ({ success: true, results: [] }),
+    getSeriesEpisodes: async () => ({ success: true, data: { episodes: [] } }),
+  };
+  const page = mount('Browse.jsx', { active: true }, api);
+  await tick(); await tick();
+  page.render();
+  assert.equal(pages[0], 1, 'initial fetch loads page 1');
+  const card = title => page.find(node => node.type === 'button' && node.props?.title?.includes(title));
+  assert.ok(card('短剧一'), 'first page cards rendered');
+  const nextBtn = page.find(node => node.type === 'button' && node.props?.['aria-label'] === '下一页');
+  assert.ok(nextBtn, 'accessible next button exists');
+  await nextBtn.props.onClick();
+  await tick(); await tick();
+  page.render();
+  assert.equal(pages.at(-1), 2, 'next batch fetched page 2');
+  assert.ok(card('短剧一'), 'original card s1 retained');
+  assert.ok(card('短剧三'), 'appended card s3 rendered');
 });
