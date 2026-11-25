@@ -39,6 +39,7 @@ function HongguoDownload({ onNavigate, active = true }) {
   const [qualityLoading, setQualityLoading] = useState(true);
   const [openingPlayer, setOpeningPlayer] = useState(false);
   const playPending = useRef(false);
+  const savedPositionRef = useRef(null);
   const firstPlayable = seriesData?.episodes.find((ep) => !ep.locked);
   // 评论/弹幕/剧评仅红果来源可取（取数函数都以纯数字 ID 为前置校验）；其它来源隐藏导出勾选。
   const isHongguoSource = /^\d{6,30}$/.test(String(seriesData?.series_id || ''));
@@ -49,9 +50,14 @@ function HongguoDownload({ onNavigate, active = true }) {
   useEffect(() => {
     setIntroExpanded(false);
     setPublicIntro(null);
-    if (!seriesData || seriesDescription || !/^\d{6,30}$/.test(String(seriesData.series_id))) return;
+    savedPositionRef.current = null;
+    if (!seriesData?.series_id) return;
     let cancelled = false;
     const seriesId = seriesData.series_id;
+    window.electronAPI?.getPlaybackPosition?.(seriesId).then((saved) => {
+      if (!cancelled && saved) savedPositionRef.current = { seriesId: String(seriesId), saved };
+    }).catch(() => {});
+    if (seriesDescription || !/^\d{6,30}$/.test(String(seriesId))) return () => { cancelled = true; };
     setPublicIntro({ seriesId, loading: true });
     Promise.resolve().then(() => window.electronAPI.getPublicDetails(seriesId)).then(data => {
       if (cancelled) return;
@@ -252,7 +258,12 @@ function HongguoDownload({ onNavigate, active = true }) {
     setOpeningPlayer(true);
     setErrorMsg('');
     try {
-      const res = await window.electronAPI.playSeries({ seriesId: seriesData.series_id, vidIndex: firstPlayable.vid_index });
+      const cached = savedPositionRef.current?.seriesId === String(seriesData.series_id) ? savedPositionRef.current.saved : null;
+      const resumeEp = cached?.vid_index ? seriesData.episodes?.find((ep) => ep.vid_index === cached.vid_index && !ep.locked) : null;
+      const payload = resumeEp
+        ? { seriesId: seriesData.series_id, vidIndex: resumeEp.vid_index, resume: true }
+        : { seriesId: seriesData.series_id, vidIndex: firstPlayable.vid_index };
+      const res = await window.electronAPI.playSeries(payload);
       if (!res?.success && request === resolveRequest.current) setErrorMsg(res?.error || '打开播放器失败，请重试');
     } catch (error) {
       if (request === resolveRequest.current) setErrorMsg('打开播放器失败: ' + error.message);

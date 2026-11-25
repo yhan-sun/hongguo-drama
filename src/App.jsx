@@ -144,7 +144,10 @@ export default function App({ platformPages = {} }) {
     if (!window.electronAPI.onNavigate) return undefined;
     return window.electronAPI.onNavigate((data) => {
       if (!data || !data.page) return;
-      if (data.payload) setPlayerTarget({ ...data.payload, ts: Date.now() });
+      if (data.payload) {
+        const fromPage = data.payload.fromPage || (pageRef.current && pageRef.current !== 'player' ? pageRef.current : undefined);
+        setPlayerTarget({ ...data.payload, ...(fromPage ? { fromPage } : {}), ts: Date.now() });
+      }
       navigate(data.page);
     });
   }, []);
@@ -259,7 +262,8 @@ export default function App({ platformPages = {} }) {
     try {
       const res = await window.electronAPI.searchResolve(val);
       if (res?.success && res.data) {
-        setPlayerTarget({ seriesId: res.data.series_id, resume: true, ts: Date.now() });
+        const fromPage = pageRef.current && pageRef.current !== 'player' ? pageRef.current : undefined;
+        setPlayerTarget({ seriesId: res.data.series_id, resume: true, ...(fromPage ? { fromPage } : {}), ts: Date.now() });
         navigate('player');
         setSearchQuery('');
         setSmartLink(null);
@@ -321,6 +325,9 @@ export default function App({ platformPages = {} }) {
             target={playerTarget}
             onSeriesSelected={rememberPlayerSeries}
             onFloatingChange={setFloatingPlayer}
+            onExitPlayer={(fromPage) => {
+              if (fromPage && fromPage !== 'player') navigate(fromPage);
+            }}
             onNavigate={navigate}
           />
         ) : null;

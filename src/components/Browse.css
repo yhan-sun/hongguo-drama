@@ -413,6 +413,10 @@
   opacity: 1;
   transform: scale(1);
 }
+.browse-hover-action:hover {
+  transform: scale(1.12) !important;
+  background: var(--primary-hover, #c22d2f);
+}
 
 /* 卡片观看细进度条 */
 .browse-card-progress {

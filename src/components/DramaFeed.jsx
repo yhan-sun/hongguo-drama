@@ -421,9 +421,19 @@ function DramaFeed({ active = true, onNavigate }) {
                   </div>
 
                   {isSelected && (
-                    <div className="rank-item-active-play" aria-hidden="true">
-                      <Play size={13} />
-                    </div>
+                    <span
+                      className="rank-item-active-play"
+                      role="button"
+                      tabIndex={-1}
+                      title={t("立即播放")}
+                      aria-label={t(`立即播放 ${item.series_title}`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startItem(item);
+                      }}
+                    >
+                      <Play size={13} fill="currentColor" />
+                    </span>
                   )}
                 </div>
               );

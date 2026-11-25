@@ -756,7 +756,8 @@
 .layout-portrait .player-episode-panel { display: block; }
 .layout-portrait .player-episode-panel .player-tips { display: none; }
 .layout-portrait .player-now-sub, .layout-portrait .player-now-status { display: none; }
-.player-stage.player-window-fill { position: fixed; inset: 48px 0 0; width: 100%; height: calc(100% - 48px); max-height: none; aspect-ratio: auto; margin: 0; z-index: 15; border-radius: 0; }
+.player-stage.player-window-fill { position: fixed !important; inset: 48px 0 0 !important; width: 100vw !important; height: calc(100vh - 48px) !important; max-height: none !important; aspect-ratio: auto !important; margin: 0 !important; z-index: 99 !important; border-radius: 0 !important; }
+.player-stage:fullscreen { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; max-height: none !important; z-index: 9999 !important; border-radius: 0 !important; }
 
 /* Width mode follows the available width; only the stage clips the picture. */
 .player-stage[data-picture-mode] .player-video { object-fit: contain; }
@@ -863,6 +864,21 @@
   pointer-events: none;
   transform: translateY(-8px);
 }
+/* 鼠标悬停在顶部操作栏、选集抽屉或设置面板上时，严禁隐匿或抽搐闪烁 */
+.player-top-clean-bar:hover,
+.player-top-clean-bar:focus-within,
+.player-top-clean-bar:has(:hover),
+.player-top-clean-bar:has(:focus-visible),
+.player-episode-panel:hover,
+.player-episode-panel:focus-within,
+.player-episode-panel:has(:hover),
+.player-settings-popover:hover,
+.player-settings-popover:focus-within {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  visibility: visible !important;
+}
 .player-top-clean-bar[hidden] {
   display: none;
 }
@@ -960,13 +976,19 @@
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #d4d4d8;
-  transition: all 0.15s ease;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
   cursor: pointer;
+}
+.player-action-btn svg {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .player-action-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.2);
+}
+.player-action-btn:hover svg {
+  transform: scale(1.1);
 }
 .player-action-btn.active-fav {
   color: #D9383A;
@@ -1748,3 +1770,462 @@ body.cinema-mode .player-ambient-backdrop {
   background: rgba(255, 255, 255, 0.16) !important;
   border-color: rgba(255, 255, 255, 0.28) !important;
 }
+
+/* ===== 独立全屏沉浸播放器（类似 BetterDouyin） ===== */
+.player-container.standalone-player-mode {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 1000 !important;
+  background: #06070a !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.player-container.standalone-player-mode .player-viewing-layout {
+  flex: 1;
+  min-height: 0;
+  width: 100% !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.player-container.standalone-player-mode .player-stage {
+  width: 100% !important;
+  height: 100vh !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+}
+.player-container.standalone-player-mode .player-stage.player-window-fill {
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 1005 !important;
+}
+/* macOS 窗口红绿灯位于左上角 ~76px，独立播放器顶部栏左内边距留足安全间距 */
+.platform-mac .player-container.standalone-player-mode .player-top-clean-bar {
+  padding-left: 84px;
+}
+.player-exit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 9px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(18, 20, 26, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f4f4f5;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+.player-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+.player-exit-btn:active {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* 在「我的剧库」画廊模式下隐藏右侧剧集抽屉和未播放占位（保留悬浮窗插槽） */
+.player-container:not(.standalone-player-mode):not(.stealth-mode) .player-episode-panel {
+  display: none !important;
+}
+.player-container.library-gallery-mode:not(.has-floating-player) .player-viewing-layout {
+  display: none !important;
+}
+
+/* ===== 我的剧库（追剧记录与沉浸播放入口） ===== */
+.player-container.library-gallery-mode {
+  max-width: 1320px;
+  padding: 20px 24px 36px;
+  overflow: visible;
+}
+.library-gallery-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+.library-gallery-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.library-gallery-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.library-gallery-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+.library-gallery-title-row svg {
+  color: var(--accent, #d9383a);
+}
+.library-gallery-title-row h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.library-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-card-hover, rgba(128, 128, 128, 0.12));
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.library-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.library-gallery-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.library-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  min-width: 210px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.library-search-box:focus-within {
+  border-color: var(--accent, #d9383a);
+  box-shadow: 0 0 0 3px rgba(217, 56, 58, 0.12);
+}
+.library-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+.library-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+.library-search-clear {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.library-search-clear:hover {
+  color: var(--text-primary);
+  background: rgba(128, 128, 128, 0.14);
+}
+.library-filter-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.library-filter-pill {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.library-filter-pill:hover {
+  color: var(--text-primary);
+}
+.library-filter-pill.active {
+  background: var(--accent, #d9383a);
+  color: #ffffff;
+  font-weight: 600;
+}
+.library-storage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.library-storage-summary {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.library-storage-summary b {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.library-storage-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.library-filter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 20px;
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+.library-filter-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+.library-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 18px;
+}
+.library-drama-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+  outline: none;
+}
+.library-drama-card:hover,
+.library-drama-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(217, 56, 58, 0.45);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16);
+}
+.library-drama-card.is-recent {
+  border-color: rgba(217, 56, 58, 0.32);
+}
+.library-card-poster {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1b1d24, #111318);
+}
+.library-card-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.library-drama-card:hover .library-card-poster img {
+  transform: scale(1.04);
+}
+.library-card-poster-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.45);
+}
+.library-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, transparent 36%, rgba(0, 0, 0, 0.68) 100%);
+  pointer-events: none;
+}
+.library-card-top-badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  pointer-events: none;
+}
+.library-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.library-badge.watching {
+  background: rgba(217, 56, 58, 0.88);
+  color: #ffffff;
+}
+.library-badge.completed {
+  background: rgba(16, 185, 129, 0.88);
+  color: #ffffff;
+}
+.library-badge.downloaded {
+  background: rgba(18, 20, 26, 0.78);
+  color: #f4f4f5;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.library-card-top-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+  z-index: 2;
+}
+.library-drama-card:hover .library-card-top-actions,
+.library-drama-card:focus-within .library-card-top-actions {
+  opacity: 1;
+}
+.library-card-icon-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(16, 18, 24, 0.78);
+  color: #f4f4f5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.library-card-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+.library-card-icon-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.9);
+  border-color: rgba(239, 68, 68, 1);
+}
+.library-card-play-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -44%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(217, 56, 58, 0.94);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.library-drama-card:hover .library-card-play-overlay,
+.library-drama-card:focus-visible .library-card-play-overlay {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+.library-card-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3.5px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.library-card-progress-fill {
+  height: 100%;
+  background: #ff4757;
+  transition: width 0.2s ease;
+}
+.library-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px 2px;
+}
+.library-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.library-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.library-card-meta svg {
+  flex-shrink: 0;
+  color: var(--accent, #d9383a);
+}
+
+@media (max-width: 640px) {
+  .player-container.library-gallery-mode {
+    padding: 14px 12px 28px;
+  }
+  .library-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 12px;
+  }
+}
+

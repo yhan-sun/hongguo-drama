@@ -666,13 +666,22 @@ function Browse({ onNavigate, active = true }) {
     }
   };
 
-  // 从第一集开始；播放器按实际状态选择本地或在线片源。
+  // 从第一集开始或按观看记录续播；播放器按实际状态选择本地或在线片源。
   const playNow = async (vidIndex) => {
     if (!detail) return;
-    const first = detail.episodes.find((e) => !e.locked && (typeof vidIndex !== 'number' || e.vid_index === vidIndex));
+    const explicitEpisode = typeof vidIndex === 'number';
+    const historyItem = !explicitEpisode ? historyMap[String(detail.series_id)] : null;
+    const preferred = historyItem
+      ? detail.episodes.find((e) => !e.locked && e.vid_index === historyItem.vid_index)
+      : null;
+    const first = preferred || detail.episodes.find((e) => !e.locked && (!explicitEpisode || e.vid_index === vidIndex));
     if (!first) return;
     try {
-      const res = await window.electronAPI.playSeries({ seriesId: detail.series_id, vidIndex: first.vid_index });
+      const res = await window.electronAPI.playSeries({
+        seriesId: detail.series_id,
+        vidIndex: first.vid_index,
+        ...(historyItem ? { resume: true } : {}),
+      });
       if (res?.success) closeDetail();
       else showToast(res?.error || '打开播放器失败，请重试', 'error');
     } catch (e) {
@@ -994,10 +1003,20 @@ function Browse({ onNavigate, active = true }) {
                       </div>
                     )}
 
-                    {/* Hover 时右下角浮现播放图标 */}
-                    <div className="browse-hover-action" aria-hidden="true">
+                    {/* Hover 时右下角浮现播放图标，点击直接全屏播放并断点续播 */}
+                    <span
+                      className="browse-hover-action"
+                      role="button"
+                      tabIndex={-1}
+                      aria-label={t(`立即播放 ${item.series_title}`)}
+                      title={t(historyItem ? `继续观看 第 ${historyItem.vid_index} 集` : '立即进入播放界面')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openSeries(item, true);
+                      }}
+                    >
                       <Play size={16} fill="currentColor" />
-                    </div>
+                    </span>
                   </div>
 
                   <div className="browse-card-info">

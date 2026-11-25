@@ -16,7 +16,7 @@ import NasDownload from './NasDownload';
 import CastPanel from './CastPanel';
 import VideoEnhancement, { useVideoEnhancement } from './VideoEnhancement';
 import './Player.css';
-import { Play, Film, Download, Check, RefreshCw, Layers, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Zap, ArrowLeft, Heart, Sun, Moon, Maximize2, PanelRightClose, PanelRightOpen, Settings, Info, ThumbsUp, Tv, Share2, Sparkles, MessageSquare } from './icons';
+import { Play, Film, Download, Check, RefreshCw, Layers, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Zap, ArrowLeft, Heart, Sun, Moon, Maximize2, PanelRightClose, PanelRightOpen, Settings, Info, ThumbsUp, Tv, Share2, Sparkles, MessageSquare, Search, Clock } from './icons';
 import { readLocalLibrary, saveLocalSeries } from '../localLibrary.js';
 
 const localMediaKey = (seriesId, episode) => JSON.stringify([seriesId, episode?.vid, episode?.vid_index, episode?.fileUrl, episode?.fileSize, episode?.taskId]);
@@ -55,7 +55,7 @@ const prefetchKey = (seriesId, vid, quality) => JSON.stringify([String(seriesId 
  *  - 「边下边看」：下一集若还在下载，显示等待态并轮询，下完自动接上
  *  - 断点续播：按 series_id 记住看到第几集、第几秒
  */
-function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active = true, portrait = false, actionsHidden = false, episodesOpen = false, setEpisodesOpen }) {
+function Player({ target, onNavigate, onExitPlayer, onSeriesSelected, onFloatingChange, active = true, portrait = false, actionsHidden = false, episodesOpen = false, setEpisodesOpen }) {
   useLanguage();
   const mobile = window.electronAPI.platform === 'android';
   const enhancement = useVideoEnhancement();
@@ -66,7 +66,18 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   const playbackSettingPending = useRef(false);
   const playbackSettingRevision = useRef(0);
   const [windowFill, setWindowFill] = useState(false);
+  const nativeFullscreenRef = useRef(false);
   const [controlsHidden, setControlsHidden] = useState(false);
+  useEffect(() => {
+    if (typeof window.electronAPI?.isFullscreen !== 'function') return;
+    const syncNative = () => {
+      window.electronAPI.isFullscreen().then((res) => {
+        if (typeof res === 'boolean') nativeFullscreenRef.current = res;
+      }).catch(() => {});
+    };
+    window.addEventListener?.('resize', syncNative);
+    return () => window.removeEventListener?.('resize', syncNative);
+  }, []);
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const layout = document.querySelector('.app-layout');
@@ -130,21 +141,40 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     };
   }, [cinemaMode]);
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (ignoresPlaybackShortcut(e)) return;
-      if (e.key === 'c' || e.key === 'C') {
-        e.preventDefault();
-        setCinemaMode(v => !v);
-      }
-    };
-    window?.addEventListener?.('keydown', handleKey);
-    return () => window?.removeEventListener?.('keydown', handleKey);
-  }, []);
+  // Alt/Shift 组合和输入框期间不拦截快捷键
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerHovered, setDrawerHovered] = useState(false);
   const hoverTimerRef = useRef(null);
+
+  const [topBarHovered, setTopBarHovered] = useState(false);
+  const topBarHoverTimerRef = useRef(null);
+
+  const [libraryQuery, setLibraryQuery] = useState('');
+  const [libraryFilter, setLibraryFilter] = useState('all'); // 'all' | 'watching' | 'completed' | 'downloaded'
+
+  const handleTopBarMouseEnter = useCallback(() => {
+    if (topBarHoverTimerRef.current) {
+      clearTimeout(topBarHoverTimerRef.current);
+      topBarHoverTimerRef.current = null;
+    }
+    setTopBarHovered(true);
+    setControlsHidden(false);
+  }, []);
+
+  const handleTopBarMouseLeave = useCallback((e) => {
+    if (e?.relatedTarget?.closest?.('.player-top-clean-bar, .cast-panel, .player-settings-popover, .series-picker')) return;
+    if (topBarHoverTimerRef.current) {
+      clearTimeout(topBarHoverTimerRef.current);
+    }
+    topBarHoverTimerRef.current = setTimeout(() => {
+      topBarHoverTimerRef.current = null;
+      try {
+        if (document.querySelector?.('.cast-panel:hover, .player-top-clean-bar:hover, .player-settings-popover:hover, .series-picker:hover')) return;
+      } catch {}
+      setTopBarHovered(false);
+    }, 350);
+  }, []);
 
   const handleDrawerMouseEnter = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -154,11 +184,16 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     setDrawerHovered(true);
   }, []);
 
-  const handleDrawerMouseLeave = useCallback(() => {
+  const handleDrawerMouseLeave = useCallback((e) => {
+    if (e?.relatedTarget?.closest?.('.player-episode-panel')) return;
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
     }
     hoverTimerRef.current = setTimeout(() => {
+      hoverTimerRef.current = null;
+      try {
+        if (document.querySelector?.('.player-episode-panel:hover')) return;
+      } catch {}
       setDrawerHovered(false);
     }, 280);
   }, []);
@@ -277,6 +312,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   const [playbackError, setPlaybackError] = useState('');
   const [playbackVersion, setPlaybackVersion] = useState(0);
   const [playbackRequested, setPlaybackRequested] = useState(false);
+  const [standalonePlaying, setStandalonePlaying] = useState(() => Boolean(target?.seriesId && target?.autoplay !== false));
+  const [watchHistoryMap, setWatchHistoryMap] = useState({});
   const [compatCache, setCompatCache] = useState({ files: 0, bytes: 0 });
   const [mergeAsk, setMergeAsk] = useState(false);            // 合并格式选择
   const [mergeError, setMergeError] = useState('');
@@ -374,14 +411,47 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     if (!Number.isFinite(seconds) || seconds < 0) return;
     if (!force && Math.abs(seconds - lastSavedRef.current) < 3) return;
     lastSavedRef.current = seconds;
+    const currentDetail = stateRef.current.detail;
+    const meta = currentDetail && String(currentDetail.series_id) === String(media.seriesId)
+      ? { title: currentDetail.series_title, cover: currentDetail.cover }
+      : {};
     window.electronAPI.savePlaybackPosition(media.seriesId, media.vidIndex, seconds,
-      { duration: media.element.duration, ended: ended || media.element.ended === true }).catch(() => {});
+      { duration: media.element.duration, ended: ended || media.element.ended === true, ...meta }).catch(() => {});
   }, []);
 
   useEffect(() => window.electronAPI.onWatchHistoryUpdated?.(payload => {
     const media = loadedMediaRef.current;
     // A retained hidden player must not recreate a record removed on the history page.
     if (media && String(media.seriesId) === payload?.removedSeriesId) media.played = false;
+    if (payload?.removedSeriesId) {
+      setWatchHistoryMap(prev => {
+        const next = { ...prev };
+        delete next[String(payload.removedSeriesId)];
+        return next;
+      });
+    } else if (payload?.cleared) {
+      setWatchHistoryMap({});
+    } else if (payload?.series_id) {
+      const sid = String(payload.series_id);
+      setWatchHistoryMap(prev => {
+        const currentDetail = stateRef.current.detail;
+        const meta = currentDetail && String(currentDetail.series_id) === sid
+          ? { series_title: currentDetail.series_title, cover: currentDetail.cover }
+          : {};
+        return {
+          ...prev,
+          [sid]: { ...(prev[sid] || {}), ...meta, series_id: sid, vid_index: payload.vid_index, currentTime: payload.currentTime, updatedAt: Date.now() },
+        };
+      });
+    } else {
+      window.electronAPI.getWatchHistory?.().then(res => {
+        if (res?.success && Array.isArray(res.results)) {
+          const map = {};
+          for (const item of res.results) map[String(item.series_id)] = item;
+          setWatchHistoryMap(map);
+        }
+      }).catch(() => {});
+    }
   }), []);
 
   const currentPosition = useCallback(() => {
@@ -479,6 +549,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     clearTimeout(decodeTimer.current);
     clearTimeout(toastTimer.current);
     clearTimeout(rateNoticeTimer.current);
+    clearTimeout(topBarHoverTimerRef.current);
+    clearTimeout(hoverTimerRef.current);
   }, [persistPosition, releaseOnline, cancelCompat, releasePrefetch]);
 
   const showToast = useCallback((text) => {
@@ -515,12 +587,90 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     }
   }, [savePlaybackPreferences]);
 
-  // 载入已登记的剧集列表
+  // 载入已登记的剧集列表与观看历史（观看历史后台异步刷新，不阻塞冷启动首播时序）
   const loadSeriesList = useCallback(async () => {
     const list = (await window.electronAPI.getSeriesList()) || [];
     setSeriesList(list);
+    try {
+      Promise.resolve(window.electronAPI.getWatchHistory?.()).then((res) => {
+        if (res?.success && Array.isArray(res.results)) {
+          const map = {};
+          for (const item of res.results) {
+            map[String(item.series_id)] = item;
+          }
+          setWatchHistoryMap(map);
+        }
+      }).catch(() => {});
+    } catch {}
     return list;
   }, []);
+
+  const handleExitPlayer = useCallback(async () => {
+    const video = videoRef.current;
+    if (video && !video.paused) {
+      try { video.pause(); } catch {}
+    }
+    pendingAutoplayRef.current = false;
+    persistPosition(true);
+    try {
+      const owner = stageRef.current?.ownerDocument || document;
+      if (owner.fullscreenElement) await owner.exitFullscreen?.().catch(() => {});
+      if (typeof window.electronAPI?.isFullscreen === 'function'
+        && (await window.electronAPI.isFullscreen().catch(() => false)) === true) {
+        await window.electronAPI.toggleFullscreen?.().catch(() => {});
+      }
+      nativeFullscreenRef.current = false;
+      window.dispatchEvent?.(new Event('resize'));
+    } catch {}
+    setWindowFill(false);
+    setDrawerOpen(false);
+    setDrawerHovered(false);
+    setPickerOpen(false);
+    setSettingsOpen(false);
+    setPlaybackRequested(false);
+    setStandalonePlaying(false);
+    loadSeriesList().catch(() => {});
+    if (target?.fromPage && target.fromPage !== 'player') {
+      onExitPlayer?.(target.fromPage);
+    }
+  }, [persistPosition, loadSeriesList, target?.fromPage, onExitPlayer]);
+
+  useEffect(() => {
+    if (!active || !standalonePlaying) return;
+    const handleKey = (e) => {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (confirmAsk || mergeAsk) return;
+      if (ignoresPlaybackShortcut(e.target, e.key)) return;
+      if (e.key === 'Escape') {
+        const owner = stageRef.current?.ownerDocument || document;
+        if (owner.fullscreenElement) return;
+        if (windowFill) { changeWindowFill(false); return; }
+        if (pickerOpen) { setPickerOpen(false); return; }
+        if (settingsOpen) { setSettingsOpen(false); return; }
+        if (drawerOpen) { setDrawerOpen(false); return; }
+        e.preventDefault();
+        handleExitPlayer();
+      } else if ((e.key === 'c' || e.key === 'C') && !pickerOpen) {
+        e.preventDefault();
+        setCinemaMode(v => !v);
+      }
+    };
+    window?.addEventListener?.('keydown', handleKey);
+    return () => window?.removeEventListener?.('keydown', handleKey);
+  }, [active, standalonePlaying, confirmAsk, mergeAsk, windowFill, pickerOpen, settingsOpen, drawerOpen, handleExitPlayer]);
+
+  const prevTargetRef = useRef(target);
+  useEffect(() => {
+    const hadTarget = !!prevTargetRef.current?.seriesId;
+    prevTargetRef.current = target;
+    if (target?.seriesId && target?.autoplay !== false) {
+      setStandalonePlaying(true);
+      setPlaybackRequested(true);
+    } else if (hadTarget && !target?.seriesId) {
+      setStandalonePlaying(false);
+      if (!floatingPlayer.floating) setPlaybackRequested(false);
+    }
+  }, [target, target?.ts, target?.seriesId, target?.autoplay, floatingPlayer.floating]);
 
   // 载入某剧的分集状态
   const loadDetail = useCallback(async (seriesId) => {
@@ -1041,6 +1191,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       const request = { requestId: crypto.randomUUID(), seriesId: String(activeSeriesId), vidIndex,
         quality: onlineQualityRef.current?.playbackQuality || (onlineQuality === 'compat' ? 'auto' : onlineQuality), version: mediaVersion.current };
       if (compatRequestRef.current?.version === request.version && compatRequestRef.current?.vidIndex === vidIndex) return;
+      setStandalonePlaying(true);
       autoCompatAttemptRef.current = { version: request.version, force };
       pendingSeekRef.current = currentPosition();
       if (loadedMediaRef.current) pendingAutoplayRef.current = !loadedMediaRef.current.element.paused;
@@ -1197,6 +1348,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         prunePrefetchAfter(activeSeriesId, vidIndex, quality, prefetched);
       }
       resetPlayback(autoplay, force === false);
+      setStandalonePlaying(true);
       setCompatMap(prev => { const next = { ...prev }; delete next[vidIndex]; return next; });
       const request = prefetched || { requestId: crypto.randomUUID(), vid: ep.vid,
         qualityIndex, playbackQuality: qualities[qualityIndex] };
@@ -1293,6 +1445,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       onlineSourceRef.current = null;
       const seekTo = resumeAt ?? (vidIndex === stateRef.current.currentIndex ? currentPosition() : 0);
       resetPlayback(autoplay, true);
+      setStandalonePlaying(true);
       prunePrefetchAfter(activeSeriesId, vidIndex, onlineQuality);
       setCurrentIndex(vidIndex);
       setWaitingFor(null);
@@ -1364,6 +1517,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       return;
     }
     resumeLocal(latest, seekTo, autoplay);
+    setStandalonePlaying(true);
     // 用户只授权当前登记文件，不改变固定画质偏好，也不解除坏文件拒用。
     grantedLocalRef.current = key;
     showToast('已选择播放本集已有本地文件，在线播放清晰度设置不变');
@@ -1520,7 +1674,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   useEffect(() => {
     const video = videoRef.current;
     const sync = () => {
-      const native = window.electronAPI.nativePictureInPicture === true || !!video && document.pictureInPictureElement === video;
+      const native = !!video && (document.pictureInPictureElement === video || video.webkitPresentationMode === 'picture-in-picture');
       setNativePictureInPicture(native);
       onFloatingChange?.(native || floatingPlayer.floating);
     };
@@ -1528,9 +1682,11 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     if (!video) return;
     video.addEventListener('enterpictureinpicture', sync);
     video.addEventListener('leavepictureinpicture', sync);
+    video.addEventListener('webkitpresentationmodechanged', sync);
     return () => {
       video.removeEventListener('enterpictureinpicture', sync);
       video.removeEventListener('leavepictureinpicture', sync);
+      video.removeEventListener('webkitpresentationmodechanged', sync);
     };
   }, [loading, videoSrc, floatingPlayer.floating, onFloatingChange, softwareDecode]);
 
@@ -1599,16 +1755,48 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     if (document.querySelector('.stealth-mode')) { showToast('请先退出小窗模式'); return; }
     try {
       const stageDocument = stageRef.current?.ownerDocument || document;
-      if (windowFill || portrait && !floatingPlayer.floating && window.electronAPI.platform !== 'android') { changeWindowFill(!windowFill); return; }
-      if (stageDocument.fullscreenElement === stageRef.current) await stageDocument.exitFullscreen();
-      else {
+      if (windowFill) { changeWindowFill(false); return; }
+      if (stageDocument.fullscreenElement === stageRef.current) {
+        await stageDocument.exitFullscreen();
+        if (nativeFullscreenRef.current && typeof window.electronAPI?.toggleFullscreen === 'function') {
+          await window.electronAPI.toggleFullscreen().catch(() => {});
+          nativeFullscreenRef.current = false;
+          window.dispatchEvent?.(new Event('resize'));
+        }
+      } else if (nativeFullscreenRef.current && typeof window.electronAPI?.toggleFullscreen === 'function') {
+        const res = await window.electronAPI.toggleFullscreen();
+        if (typeof res !== 'boolean' && res?.success !== true) throw new Error('native fullscreen failed');
+        nativeFullscreenRef.current = typeof res === 'boolean' ? res : false;
+        window.dispatchEvent?.(new Event('resize'));
+      } else {
         const element = stageRef.current?.closest('.main-content');
         // Fullscreen takes the player out of flow and can clamp the page's scrollTop to zero.
         if (element && !fullscreenScrollRef.current) fullscreenScrollRef.current = { element, top: element.scrollTop };
-        await stageRef.current?.requestFullscreen();
+        if (typeof stageRef.current?.requestFullscreen === 'function') {
+          try {
+            await stageRef.current.requestFullscreen();
+          } catch (domErr) {
+            if (typeof window.electronAPI?.toggleFullscreen === 'function') {
+              const res = await window.electronAPI.toggleFullscreen().catch(() => null);
+              if (typeof res === 'boolean' || res?.success === true) {
+                nativeFullscreenRef.current = typeof res === 'boolean' ? res : true;
+                window.dispatchEvent?.(new Event('resize'));
+              } else {
+                throw domErr;
+              }
+            } else {
+              throw domErr;
+            }
+          }
+        } else if (typeof window.electronAPI?.toggleFullscreen === 'function') {
+          const res = await window.electronAPI.toggleFullscreen();
+          if (typeof res !== 'boolean' && res?.success !== true) throw new Error('native fullscreen failed');
+          nativeFullscreenRef.current = typeof res === 'boolean' ? res : true;
+          window.dispatchEvent?.(new Event('resize'));
+        }
       }
     } catch { restoreFullscreenScroll(); showToast('无法进入或退出全屏，请重试'); }
-  }, [portrait, windowFill, floatingPlayer.floating, showToast, restoreFullscreenScroll, changeWindowFill]);
+  }, [windowFill, showToast, restoreFullscreenScroll, changeWindowFill]);
 
   useEffect(() => () => {
     clearTimeout(videoClickTimer.current);
@@ -1707,6 +1895,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     resetPlayback(autoplay);
     setHoldingFrame(false);
     setPlaybackRequested(autoplay);
+    setStandalonePlaying(autoplay);
     setCompatMap({});
     mergeDialogGenerationRef.current += 1;
     setMergeAsk(false);
@@ -1919,19 +2108,52 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   }, [active, portrait, episodesOpen, loading, showToast]);
   useEffect(() => () => { window.electronAPI.setEpisodePanelOpen?.(false).catch(() => {}); }, []);
 
+  const isStandaloneActive = standalonePlaying && active && !floatingPlayer.floating;
+  const formatProgressClock = (seconds) => {
+    const sec = Math.max(0, Math.floor(Number(seconds) || 0));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
   // ===== 渲染 =====
   if (loading) {
-    return <div className="player-container"><div className="player-empty">{t("加载中…")}</div></div>;
+    return (
+      <div className={`player-container ${isStandaloneActive ? 'standalone-player-mode' : 'library-gallery-mode'}`}>
+        {isStandaloneActive && (
+          <div className="player-top-clean-bar">
+            <div className="player-bar-left">
+              <button className="player-exit-btn" onClick={handleExitPlayer} title={t("退出播放")} aria-label={t("退出播放")}>
+                <ArrowLeft size={17} /><span>{t("退出播放")}</span>
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="player-empty">{t("加载中…")}</div>
+      </div>
+    );
   }
 
   if (!detail && detailError) {
     return (
-      <div className="player-container">
+      <div className={`player-container ${isStandaloneActive ? 'standalone-player-mode' : 'library-gallery-mode'}`}>
+        {isStandaloneActive && (
+          <div className="player-top-clean-bar">
+            <div className="player-bar-left">
+              <button className="player-exit-btn" onClick={handleExitPlayer} title={t("退出播放")} aria-label={t("退出播放")}>
+                <ArrowLeft size={17} /><span>{t("退出播放")}</span>
+              </button>
+            </div>
+          </div>
+        )}
         <div className="player-empty" role="alert">
           <p>{t("加载剧集失败：")}{t(detailError)}</p>
           <button className="btn btn-primary" onClick={() => switchSeries(activeSeriesId,
             String(target?.seriesId) === activeSeriesId ? target.vidIndex : 0,
-            String(target?.seriesId) === activeSeriesId && !!target.resume)}>
+            String(target?.seriesId) === activeSeriesId && !!target.resume,
+            standalonePlaying)}>
             <RefreshCw size={16} />{t(" 重试加载")}</button>
         </div>
       </div>
@@ -1962,8 +2184,52 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     );
   }
 
+  const trimmedLibraryQuery = libraryQuery.trim().toLowerCase();
+  const gallerySeries = (!isStandaloneActive ? [...seriesList] : [])
+    .map((s) => {
+      const sid = String(s.series_id);
+      const hist = watchHistoryMap[sid] || null;
+      const dl = downloadedMap[sid] || null;
+      const st = storageMap[sid] || null;
+      const totalEps = (s.episodes || []).length || dl?.total || hist?.total || 0;
+      const downloadedCount = dl?.completed || 0;
+      const isCompleted = !!(hist?.ended && totalEps > 0 && Number(hist?.vid_index) >= totalEps);
+      const isWatching = !!(hist?.vid_index && !isCompleted);
+      const lastTouchedAt = Math.max(Number(hist?.updatedAt) || 0, Number(s.updatedAt) || 0);
+      const progressPct = hist?.vid_index && totalEps > 0
+        ? (isCompleted ? 100 : Math.min(99, Math.max(3, Math.round(((Math.max(0, Number(hist.vid_index) - 1) + (hist.duration > 0 ? Math.min(1, Number(hist.currentTime || 0) / hist.duration) : 0.35)) / totalEps) * 100))))
+        : 0;
+      return { series: s, sid, hist, dl, st, totalEps, downloadedCount, isCompleted, isWatching, lastTouchedAt, progressPct };
+    })
+    .filter((item) => {
+      if (trimmedLibraryQuery && !(item.series.series_title || '').toLowerCase().includes(trimmedLibraryQuery)) return false;
+      if (libraryFilter === 'watching') return item.isWatching;
+      if (libraryFilter === 'completed') return item.isCompleted;
+      if (libraryFilter === 'downloaded') return item.downloadedCount > 0 || (item.st?.files || 0) > 0;
+      return true;
+    })
+    .sort((a, b) => b.lastTouchedAt - a.lastTouchedAt);
+
+  const playGalleryCard = (item) => {
+    const { series: s, sid, hist } = item;
+    const isCurrentLoaded = sid === String(activeSeriesId) && detail && String(detail.series_id) === sid;
+    if (isCurrentLoaded) {
+      const fallbackEp = detail.episodes?.find(e => !e.locked)?.vid_index || 1;
+      const targetVid = hist?.vid_index || currentIndex || fallbackEp;
+      const epObj = detail.episodes?.find(e => e.vid_index === targetVid && !e.locked);
+      const finalVid = epObj ? targetVid : fallbackEp;
+      const resumeSec = hist?.vid_index === finalVid
+        ? (hist.currentTime || 0)
+        : (finalVid === currentIndex ? (pendingSeekRef.current || 0) : 0);
+      goToEpisode(finalVid, resumeSec, true);
+      setStandalonePlaying(true);
+    } else {
+      switchSeries(s.series_id, hist?.vid_index || 0, true, true);
+    }
+  };
+
   return (
-    <div className={`player-container ${drawerCollapsed ? 'episodes-collapsed' : ''} ${episodesOpen ? '' : 'mobile-episodes-collapsed'}`}>
+    <div className={`player-container ${isStandaloneActive ? 'standalone-player-mode' : 'library-gallery-mode'} ${floatingPlayer.floating ? 'has-floating-player' : ''} ${drawerCollapsed ? 'episodes-collapsed' : ''} ${episodesOpen ? '' : 'mobile-episodes-collapsed'}`}>
       <div className="player-management player-online-quality-row" id="player-management" ref={downloadToolsRef} hidden={actionsHidden} style={{ display: 'none' }}>
           <button className="btn btn-outline" onClick={() => downloadMissing()} disabled={qualityLoading}>
             <Download size={15} />{t("下载未完成集")}</button>
@@ -2045,8 +2311,22 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           </button>
       </div>
       {/* 4.3 顶部极简单行标题栏（与视口严格水平对齐） */}
-      <div className={`player-top-clean-bar ${controlsHidden ? 'controls-hidden' : ''}`} hidden={actionsHidden || (mobile && controlsHidden)}>
+      <div
+        className={`player-top-clean-bar ${controlsHidden && !topBarHovered && !settingsOpen && !pickerOpen ? 'controls-hidden' : ''}`}
+        hidden={!isStandaloneActive || actionsHidden || (mobile && controlsHidden)}
+        onMouseEnter={handleTopBarMouseEnter}
+        onMouseLeave={handleTopBarMouseLeave}
+      >
         <div className="player-bar-left">
+          <button
+            className="player-exit-btn"
+            onClick={handleExitPlayer}
+            title={t("退出播放")}
+            aria-label={t("退出播放")}
+          >
+            <ArrowLeft size={17} />
+            <span>{t("退出播放")}</span>
+          </button>
           <div className="player-title-group">
             <span className="player-bar-title" title={detail ? detail.series_title : ''}>
               {detail ? detail.series_title : t('短剧播放')}
@@ -2415,6 +2695,218 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         </div>
       )}
 
+      {!isStandaloneActive && (
+        <div className="library-gallery-container">
+          <div className="library-gallery-header">
+            <div className="library-gallery-title-wrap">
+              <div className="library-gallery-title-row">
+                <Film size={22} />
+                <h2>{t("我的剧库")}</h2>
+                <span className="library-count-badge">{t("{0} 部", [seriesList.length])}</span>
+              </div>
+              <p className="library-subtitle">{t("记录你的追剧进度，点击任意短剧进入沉浸播放")}</p>
+            </div>
+            <div className="library-gallery-controls">
+              <div className="library-search-box">
+                <Search size={15} />
+                <input
+                  type="text"
+                  className="library-search-input"
+                  aria-label={t("在我的剧库搜索")}
+                  placeholder={t("搜索片名…")}
+                  value={libraryQuery}
+                  onChange={(e) => setLibraryQuery(e.target.value)}
+                />
+                {libraryQuery && (
+                  <button
+                    className="library-search-clear"
+                    onClick={() => setLibraryQuery('')}
+                    aria-label={t("清除搜索")}
+                    title={t("清除搜索")}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="library-filter-pills" role="tablist" aria-label={t("筛选剧库")}>
+                {[
+                  { id: 'all', label: '全部' },
+                  { id: 'watching', label: '正在追' },
+                  { id: 'completed', label: '已看完' },
+                  { id: 'downloaded', label: '已下载' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={libraryFilter === tab.id}
+                    className={`library-filter-pill ${libraryFilter === tab.id ? 'active' : ''}`}
+                    onClick={() => setLibraryFilter(tab.id)}
+                  >
+                    {t(tab.label)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {(storageTotal.files > 0 || cacheInfo.count > 0 || compatCache.files > 0) && (
+            <div className="library-storage-bar">
+              {storageTotal.files > 0 && (
+                <span className="library-storage-summary">
+                  {t("本地已占用 ")}<b>{t(fmtSize(storageTotal.bytes))}</b> / {t(storageTotal.files)}{t(" 个文件")}
+                </span>
+              )}
+              <div className="library-storage-actions">
+                {storageTotal.files > 0 && (
+                  <button
+                    className="btn btn-outline btn-sm btn-danger-text"
+                    title={t("删除所有已下载的本地文件")}
+                    onClick={() => {
+                      setConfirmAsk({
+                        title: '清空所有下载视频',
+                        message: `将清空所有已下载的剧集视频（共 ${storageTotal.files} 个文件，释放 ${fmtSize(storageTotal.bytes)}）。\n播放进度与剧集信息仍会保留。`,
+                        okText: '确认清空',
+                        danger: true,
+                        onOk: async () => {
+                          if (current?.fileUrl && !onlineUrl && !compatMap[currentIndex]) stopPlayback('本地播放已停止，可重新连接片源观看');
+                          await deleteDownloadedFiles(() => window.electronAPI.deleteAllDownloaded());
+                        },
+                      });
+                    }}
+                  >{t("删除全部已下载")}</button>
+                )}
+                <button className="btn btn-outline btn-sm" onClick={clearCache} title={t("清空在线播放临时缓存")}>
+                  <Zap size={14} />{t("清空播放缓存")}{t(cacheInfo.count > 0 ? ` (${cacheInfo.count})` : '')}
+                </button>
+                {compatCache.files > 0 && (
+                  <button className="btn btn-outline btn-sm" onClick={clearCompatCache} title={t("删除转码产生的兼容格式文件")}>
+                    <Trash2 size={14} />{t("清空转码缓存")}{` (${fmtSize(compatCache.bytes)})`}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {gallerySeries.length === 0 ? (
+            <div className="library-filter-empty">
+              <Film size={32} />
+              <p>{t("没有找到符合条件的短剧")}</p>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => { setLibraryQuery(''); setLibraryFilter('all'); }}
+              >
+                {t("清除筛选")}
+              </button>
+            </div>
+          ) : (
+            <div className="library-cards-grid">
+              {gallerySeries.map((item) => {
+                const { series: s, sid, hist, st, totalEps, downloadedCount, isCompleted, progressPct } = item;
+                const hasFiles = !!(st && st.files > 0);
+                return (
+                  <div
+                    key={s.series_id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t(`继续播放 ${s.series_title}`)}
+                    className={`library-drama-card ${sid === String(activeSeriesId) ? 'is-recent' : ''}`}
+                    onClick={() => playGalleryCard(item)}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget || !['Enter', ' '].includes(e.key)) return;
+                      e.preventDefault();
+                      playGalleryCard(item);
+                    }}
+                  >
+                    <div className="library-card-poster">
+                      {s.cover ? <img src={s.cover} alt="" loading="lazy" /> : <div className="library-card-poster-fallback"><Film size={28} /></div>}
+                      <div className="library-card-scrim" />
+                      <div className="library-card-top-badges">
+                        {isCompleted ? (
+                          <span className="library-badge completed">{t("已看完")}</span>
+                        ) : hist?.vid_index ? (
+                          <span className="library-badge watching">{t("正在追")}</span>
+                        ) : null}
+                        {downloadedCount > 0 && (
+                          <span className="library-badge downloaded">{t("已下载")} {downloadedCount}</span>
+                        )}
+                      </div>
+                      <div className="library-card-top-actions">
+                        {hasFiles && (
+                          <button
+                            className="library-card-icon-btn danger"
+                            title={t(`删除本地文件（${st.files} 个 · ${fmtSize(st.bytes)}）`)}
+                            aria-label={t(`删除 ${s.series_title} 的本地文件`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmAsk({
+                                title: '删除本地文件',
+                                message: `将删除《${s.series_title}》已下载的 ${st.files} 个文件，释放 ${fmtSize(st.bytes)}。\n剧集仍保留在列表中，之后可以随时在线播放或重新下载。`,
+                                okText: '删除文件',
+                                danger: true,
+                                onOk: async () => {
+                                  if (sid === selectedSeriesRef.current && !onlineUrl && !compatMap[currentIndex]) stopPlayback('本地播放已停止，可重新连接片源观看');
+                                  await deleteDownloadedFiles(() => window.electronAPI.deleteSeriesFiles(s.series_id));
+                                },
+                              });
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                        <button
+                          className="library-card-icon-btn"
+                          title={t("永久移除剧库记录（不删除本地文件）")}
+                          aria-label={t(`永久移除 ${s.series_title} 的剧库记录`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmAsk({
+                              title: '从剧库移除',
+                              message: `确定将《${s.series_title}》从剧库移除吗？已下载的本地视频文件仍会保留。`,
+                              okText: '永久移除',
+                              danger: true,
+                              onOk: () => removeSeries(s.series_id, s.series_title),
+                            });
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="library-card-play-overlay" aria-hidden="true">
+                        <Play size={16} />
+                        <span>{hist?.vid_index ? t("继续播放") : t("开始播放")}</span>
+                      </div>
+                      {progressPct > 0 && (
+                        <div className="library-card-progress" aria-hidden="true">
+                          <div className="library-card-progress-fill" style={{ width: `${progressPct}%` }} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="library-card-body">
+                      <div className="library-card-title" title={s.series_title}>{s.series_title}</div>
+                      <div className="library-card-meta">
+                        {hist?.vid_index ? (
+                          <>
+                            <Clock size={12} />
+                            <span>
+                              {isCompleted
+                                ? t('已看完 · 共 {0} 集', [totalEps || hist.vid_index])
+                                : t('看到第 {0} 集 · {1}', [hist.vid_index, formatProgressClock(hist.currentTime)])}
+                            </span>
+                          </>
+                        ) : (
+                          <span>{t("尚未开始观看")} · {t('共 {0} 集', [totalEps])}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="player-viewing-layout">
       {/* 播放区 */}
       <div className="player-floating-slot" ref={floatingPlayer.attachSlot}>
@@ -2424,7 +2916,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         </div>}
       </div>
       {t(createPortal(
-      <div className={`player-stage ${windowFill ? 'player-window-fill' : ''}`} data-picture-mode={pictureMode} ref={stageRef}
+      <div className={`player-stage ${windowFill ? 'player-window-fill' : ''}`} data-picture-mode={pictureMode} ref={stageRef} hidden={!isStandaloneActive && !playbackRequested && !floatingPlayer.floating}
         onDoubleClick={(event) => {
           if (event.target.closest('.player-controls, button, input, select, textarea, a, [role="dialog"]')) return;
           clearTimeout(videoClickTimer.current);
@@ -2520,22 +3012,37 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           if (document.querySelector('.stealth-mode')) throw new Error('请先退出小窗模式');
           changeWindowFill(false);
           const video = videoRef.current;
-          if (window.electronAPI.enterNativePictureInPicture) {
-            const result = await window.electronAPI.enterNativePictureInPicture(video?.videoWidth,video?.videoHeight);
-            if (!result?.success) throw new Error(result?.error || '画中画开启失败');
-            return;
-          }
           if (floatingPlayer.floating) { floatingPlayer.toggle(); return; }
-          if (document.pictureInPictureElement === video) { await document.exitPictureInPicture(); return; }
-          const settings = await window.electronAPI.getSettings();
-          if (settings?.picture_in_picture_mode === 'native') {
-            if (!document.pictureInPictureEnabled || !video?.requestPictureInPicture) throw new Error('当前系统不支持原生画中画');
-            await video.requestPictureInPicture();
+          if (document.pictureInPictureElement === video || video?.webkitPresentationMode === 'picture-in-picture') {
+            if (document.pictureInPictureElement) await document.exitPictureInPicture();
+            else if (typeof video?.webkitSetPresentationMode === 'function') video.webkitSetPresentationMode('inline');
             return;
           }
-          const owner = stageRef.current?.ownerDocument || document;
-          if (owner.fullscreenElement) await owner.exitFullscreen();
-          floatingPlayer.toggle();
+          const settings = await window.electronAPI?.getSettings?.().catch(() => null);
+          const preferNative = settings?.picture_in_picture_mode === 'native';
+          let entered = false;
+          if (preferNative) {
+            try {
+              if (typeof window.electronAPI?.enterNativePictureInPicture === 'function') {
+                const res = await window.electronAPI.enterNativePictureInPicture(video?.videoWidth, video?.videoHeight);
+                if (res === true || res?.success) entered = true;
+              }
+              if (!entered && typeof video?.requestPictureInPicture === 'function' && document.pictureInPictureEnabled) {
+                await video.requestPictureInPicture();
+                entered = true;
+              } else if (!entered && video?.webkitSupportsPresentationMode?.('picture-in-picture') && typeof video?.webkitSetPresentationMode === 'function') {
+                video.webkitSetPresentationMode('picture-in-picture');
+                entered = true;
+              }
+            } catch (err) {
+              console.warn('[PiP] Native Picture-in-Picture error, falling back to custom window:', err);
+            }
+          }
+          if (!entered) {
+            const owner = stageRef.current?.ownerDocument || document;
+            if (owner.fullscreenElement) await owner.exitFullscreen();
+            floatingPlayer.toggle();
+          }
         }} onOpenSettings={onNavigate ? () => onNavigate('settings') : undefined} danmaku={showDanmakuControls ? danmaku : null} enhancement={enhancement} continuing={autoAdvancing && !playbackError && !decodeFailed} autoContinue={autoNext && !!findNext(currentIndex)} shortcuts={shortcuts} onToggleFullscreen={toggleFullscreen} portrait={portrait} windowFill={windowFill} onWindowFill={changeWindowFill} videoRef={videoRef} stageRef={stageRef} source={mediaSource} available={canPlay}
           seriesTitle={detail?.series_title} episodes={episodes} currentIndex={currentIndex} onEpisodeChange={goToEpisode}
           episodesOpen={episodesOpen} onOpenEpisodes={mobile ? () => setEpisodesOpen(true) : undefined}
