@@ -13,7 +13,7 @@ const formatTime = seconds => {
 };
 const Icon = ({ children }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{t(children)}</svg>;
 
-export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAULT_SHORTCUTS, onToggleFullscreen, videoRef, stageRef, source, available, floating = false, onToggleFloating, continuing = false, autoContinue = false, rate, onRateChange, onError, pictureMode = 'fit', onPictureModeChange, portrait = false, windowFill = false, onWindowFill, seriesTitle = '', episodes = [], currentIndex, onEpisodeChange, onlineQuality = 'auto', supportsOnlineQuality = false, onQualityChange, onOpenSettings, episodesOpen = false, onOpenEpisodes, onOpenDownloads, cacheNext = false, autoNext = false, autoDelete = false, playbackSettingsBusy = false, onToggleCacheNext, onToggleAutoNext, onToggleAutoDelete, onControlsHiddenChange, decoderMode = 'auto', onDecoderChange, decoderBusy = false, onToggleDrawer, drawerCollapsed = false }) {
+export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAULT_SHORTCUTS, onToggleFullscreen, videoRef, stageRef, source, available, floating = false, onToggleFloating, continuing = false, autoContinue = false, rate, onRateChange, onError, pictureMode = 'fit', onPictureModeChange, portrait = false, windowFill = false, onWindowFill, seriesTitle = '', episodes = [], currentIndex, onEpisodeChange, onlineQuality = 'auto', supportsOnlineQuality = false, onQualityChange, onOpenSettings, episodesOpen = false, onOpenEpisodes, onOpenDownloads, cacheNext = false, autoNext = false, autoDelete = false, playbackSettingsBusy = false, onToggleCacheNext, onToggleAutoNext, onToggleAutoDelete, onControlsHiddenChange, decoderMode = 'auto', onDecoderChange, decoderBusy = false, onToggleDrawer, drawerCollapsed = false, onDrawerMouseEnter, onDrawerMouseLeave, isDrawerVisible = false }) {
   useLanguage();
   const mobile = window.electronAPI?.platform === 'android';
   const controlsIdleMs = 1000;
@@ -345,8 +345,10 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
           {danmakuOpen && <DanmakuSettings danmaku={danmaku} onClose={closeDanmaku} panelRef={danmakuPanelRef} maxHeight={danmakuHeight} />}
         </div>}
         <div className="player-controls-selection" data-player-menu ref={selectionRef}>
-          {!!episodes.length && <button type="button" ref={episodeButtonRef} aria-label={t("选集")} aria-haspopup="dialog" aria-expanded={episodesOpen || selectionPanel === 'episodes'}
-            className={!drawerCollapsed ? 'player-controls-drawer-open' : ''}
+          {!!episodes.length && <button type="button" ref={episodeButtonRef} aria-label={t("选集")} aria-haspopup="dialog" aria-expanded={episodesOpen || selectionPanel === 'episodes' || isDrawerVisible}
+            className={isDrawerVisible ? 'player-controls-drawer-open' : ''}
+            onMouseEnter={onDrawerMouseEnter}
+            onMouseLeave={onDrawerMouseLeave}
             onClick={() => {
               if (fullscreen) {
                 toggleSelection('episodes');

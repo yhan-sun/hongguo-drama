@@ -140,7 +140,37 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     return () => window?.removeEventListener?.('keydown', handleKey);
   }, []);
 
-  const [drawerCollapsed, setDrawerCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerHovered, setDrawerHovered] = useState(false);
+  const hoverTimerRef = useRef(null);
+
+  const handleDrawerMouseEnter = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setDrawerHovered(true);
+  }, []);
+
+  const handleDrawerMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    hoverTimerRef.current = setTimeout(() => {
+      setDrawerHovered(false);
+    }, 280);
+  }, []);
+
+  const isDrawerVisible = drawerOpen || drawerHovered;
+  const drawerCollapsed = !isDrawerVisible;
+  const setDrawerCollapsed = useCallback((v) => {
+    if (typeof v === 'function') {
+      setDrawerOpen(prev => !v(!prev));
+    } else {
+      setDrawerOpen(!v);
+    }
+  }, []);
+
   const [drawerTab, setDrawerTab] = useState('episodes'); // 'episodes' | 'reviews'
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [batchDownloadOpen, setBatchDownloadOpen] = useState(false);
@@ -2049,12 +2079,15 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           {/* 7. 折叠/展开右侧面板 */}
           {!mobile && (
             <button
-              className={`icon-btn player-action-btn ${drawerCollapsed ? 'active-collapsed' : ''}`}
-              onClick={() => setDrawerCollapsed(v => !v)}
-              title={t(drawerCollapsed ? '展开右侧面板' : '折叠右侧面板')}
-              aria-label={t(drawerCollapsed ? '展开面板' : '折叠面板')}
+              className={`icon-btn player-action-btn ${isDrawerVisible ? 'active-collapsed' : ''}`}
+              onClick={() => {
+                setDrawerOpen(v => !v);
+                setDrawerHovered(false);
+              }}
+              title={t(isDrawerVisible ? '收起右侧选集' : '展开右侧选集')}
+              aria-label={t(isDrawerVisible ? '收起选集' : '展开选集')}
             >
-              {drawerCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+              {isDrawerVisible ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
             </button>
           )}
 
@@ -2472,7 +2505,23 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           decoderMode={fastConversion ? 'hardware' : softwareDecode ? 'software' : 'auto'} onDecoderChange={changeDecoder} decoderBusy={qualityLoading || playbackSettingSaving}
           onlineQuality={onlineQuality} supportsOnlineQuality={supportsOnlineQuality} onQualityChange={changeOnlineQuality}
           pictureMode={pictureMode} onPictureModeChange={changePictureMode} rate={playbackRate} onRateChange={changePlaybackRate} onError={showToast}
-          onToggleDrawer={() => setDrawerCollapsed(v => !v)} drawerCollapsed={drawerCollapsed} />
+          onToggleDrawer={() => setDrawerOpen(v => !v)} drawerCollapsed={drawerCollapsed}
+          onDrawerMouseEnter={handleDrawerMouseEnter} onDrawerMouseLeave={handleDrawerMouseLeave} isDrawerVisible={isDrawerVisible} />
+        {!mobile && !isDrawerVisible && (
+          <div
+            className="player-right-hover-trigger"
+            onMouseEnter={handleDrawerMouseEnter}
+            onMouseLeave={handleDrawerMouseLeave}
+            onClick={() => { setDrawerOpen(true); setDrawerHovered(false); }}
+            title={t("选集与剧评 (鼠标移入展开)")}
+            aria-label={t("展开选集与剧评")}
+          >
+            <div className="player-right-hover-pill">
+              <ChevronLeft size={13} />
+              <span>{t("选集")}</span>
+            </div>
+          </div>
+        )}
         {!canPlay && (
           <div className={`player-placeholder${holdingFrame && !playbackError ? ' player-placeholder-over-frame' : ''}`} style={{ position: 'absolute', inset: 0, zIndex: 3 }}>
             <div className="player-placeholder-card">
@@ -2629,30 +2678,51 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       </div>, floatingPlayer.host))}
 
       {mobile && episodesOpen && <button className="mobile-episode-scrim" aria-label={t("关闭选集")} onClick={() => setEpisodesOpen(false)} />}
-      <section className={`player-episode-panel ${drawerCollapsed ? 'collapsed' : ''}`} id="player-episode-panel" ref={downloadToolsRef} aria-label={t("选集与剧评")} role={mobile && episodesOpen ? 'dialog' : undefined} aria-modal={mobile && episodesOpen ? true : undefined}>
+      <section
+        className={`player-episode-panel player-episode-overlay ${isDrawerVisible ? 'drawer-visible' : 'drawer-hidden'}`}
+        id="player-episode-panel"
+        ref={downloadToolsRef}
+        aria-label={t("选集与剧评")}
+        role={mobile && episodesOpen ? 'dialog' : undefined}
+        aria-modal={mobile && episodesOpen ? true : undefined}
+        onMouseEnter={handleDrawerMouseEnter}
+        onMouseLeave={handleDrawerMouseLeave}
+      >
         {mobile && <div className="mobile-episode-head"><h3>{t("选集与剧评")}</h3><button className="btn btn-outline btn-sm" onClick={() => setEpisodesOpen(false)}>{t("关闭")}</button></div>}
 
-        {/* 顶部双 Tab 分段切换器：选集 | 剧评 */}
-        <div className="drawer-tabs-header">
-          <div className="drawer-tab-switcher" role="tablist">
-            <button
-              role="tab"
-              aria-selected={drawerTab === 'episodes'}
-              className={`drawer-tab-btn ${drawerTab === 'episodes' ? 'active' : ''}`}
-              onClick={() => setDrawerTab('episodes')}
-            >
-              <span>{t("选集")}</span>
-              <span className="drawer-tab-count">({episodes.length || 0})</span>
-            </button>
-            <button
-              role="tab"
-              aria-selected={drawerTab === 'reviews'}
-              className={`drawer-tab-btn ${drawerTab === 'reviews' ? 'active' : ''}`}
-              onClick={() => setDrawerTab('reviews')}
-            >
-              <span>{t("剧评")}</span>
-            </button>
+        {/* 顶部双 Tab 分段切换器 + 关闭按钮 */}
+        <div className="drawer-overlay-head">
+          <div className="drawer-tabs-header">
+            <div className="drawer-tab-switcher" role="tablist">
+              <button
+                role="tab"
+                aria-selected={drawerTab === 'episodes'}
+                className={`drawer-tab-btn ${drawerTab === 'episodes' ? 'active' : ''}`}
+                onClick={() => setDrawerTab('episodes')}
+              >
+                <span>{t("选集")}</span>
+                <span className="drawer-tab-count">({episodes.length || 0})</span>
+              </button>
+              <button
+                role="tab"
+                aria-selected={drawerTab === 'reviews'}
+                className={`drawer-tab-btn ${drawerTab === 'reviews' ? 'active' : ''}`}
+                onClick={() => setDrawerTab('reviews')}
+              >
+                <span>{t("剧评")}</span>
+              </button>
+            </div>
           </div>
+          {!mobile && (
+            <button
+              className="icon-btn drawer-close-btn"
+              onClick={() => { setDrawerOpen(false); setDrawerHovered(false); }}
+              title={t("收起选集面板")}
+              aria-label={t("收起选集面板")}
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
         {/* 选集 Tab 视图 */}

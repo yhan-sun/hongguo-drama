@@ -13,10 +13,8 @@
   background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.32) 40%, rgba(0, 0, 0, 0.72) 100%);
 }
 .player-controls button.player-controls-drawer-open {
-  opacity: 0.65;
-}
-.player-controls button.player-controls-drawer-open:hover {
-  opacity: 1;
+  color: #ff4757 !important;
+  background: rgba(255, 71, 87, 0.18) !important;
 }
 .player-controls-row { display: flex; align-items: center; gap: 8px; }
 .player-controls { transition: opacity .18s ease; }
