@@ -68,6 +68,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   const [windowFill, setWindowFill] = useState(false);
   const [controlsHidden, setControlsHidden] = useState(false);
   useEffect(() => {
+    if (typeof document === 'undefined') return;
     const layout = document.querySelector('.app-layout');
     layout?.classList.toggle('player-controls-hidden', !!controlsHidden);
     return () => layout?.classList.remove('player-controls-hidden');
@@ -120,6 +121,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   const [loading, setLoading] = useState(false);
   const [cinemaMode, setCinemaMode] = useState(false);
   useEffect(() => {
+    if (typeof document === 'undefined') return;
     document.body?.classList?.toggle('cinema-mode', cinemaMode);
     document.documentElement?.setAttribute?.('data-cinema', cinemaMode ? 'true' : 'false');
     return () => {
@@ -1962,7 +1964,49 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
 
   return (
     <div className={`player-container ${drawerCollapsed ? 'episodes-collapsed' : ''} ${episodesOpen ? '' : 'mobile-episodes-collapsed'}`}>
-      {!mobile && <div className="player-online-quality-row" hidden style={{ display: 'none' }}>
+      <div className="player-management player-online-quality-row" id="player-management" ref={downloadToolsRef} hidden={actionsHidden} style={{ display: 'none' }}>
+          <button className="btn btn-outline" onClick={() => downloadMissing()} disabled={qualityLoading}>
+            <Download size={15} />{t("下载未完成集")}</button>
+          <button
+            className="btn btn-primary"
+            onClick={openMergeDialog}
+            disabled={merging || playableCount === 0}
+            title={t("把已下载的分集合并成单个 mp4，方便一次性看完")}
+          >
+            <Layers size={15} />
+            {t(merging ? '提交中...' : '合并导出全集')}
+          </button>
+          <button className="btn btn-outline" onClick={() => downloadEpisode(current?.vid_index)}
+            disabled={qualityLoading || !current || current.locked || current.status === 'completed'}>
+            <Download size={15} />{t("下载本集")}</button>
+          {[5, 10].map(count => (
+            <button key={count} className="btn btn-outline" onClick={() => downloadMissing(count)}
+              disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
+              title={t(`从当前集的下一集开始，最多下载 ${count} 集；跳过已完成和锁定集数`)}>
+              <Download size={15} />{t("下载后")}{t(count)}{t("集")}</button>
+          ))}
+          <button className="btn btn-outline" onClick={downloadFollowing}
+            disabled={qualityLoading || !current || followingDownload}
+            title={t("包含当前集，下载至末集；跳过已完成、已排队和锁定集数")}>
+            <Download size={15} />{t(followingDownload ? '提交中…' : '从本集下载至末集')}
+          </button>
+          <label className="player-download-quality">
+            <span>{t("在线播放清晰度")}</span>
+            <select className="input-field" aria-label={t("在线播放清晰度")} value={onlineQuality}
+              disabled={!supportsOnlineQuality} title={t("自动优先1080P；老电脑优先H.264片源，必要时提前转码；手动指定画质保持固定。")}
+              onChange={event => changeOnlineQuality(event.target.value)}>
+              <option value="auto">{t(supportsOnlineQuality ? '自动（1080P优先）' : '由片源决定')}</option>
+              <option value="compat">{t(mobile ? '兼容片源（H.264优先）' : '老电脑（H.264优先）')}</option>
+              <option value="720p">720P</option>
+              <option value="1080p">1080P</option>
+            </select>
+          </label>
+          <select className="input-field" aria-label={t("下载清晰度")} value={downloadQuality} disabled={qualityLoading}
+            onChange={(event) => setDownloadQuality(event.target.value)}>
+            <option value="auto">{t("自动（兼容优先）")}</option>
+            <option value="1080p">1080P</option>
+            <option value="720p">720P</option>
+          </select>
           <label className="player-download-quality player-decoder-control">
             <span>{t("解码方式")}</span>
             <select className="input-field" aria-label={t("解码方式")} value={fastConversion ? 'hardware' : softwareDecode ? 'software' : 'auto'}
@@ -1983,20 +2027,25 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             onClick={() => savePlaybackSetting('cache_next_episode', !cacheNext, setCacheNext)}>
             {t("缓存后续 2 集")}
           </button>
+          <button aria-pressed={autoNext} onClick={() => setAutoNext(!autoNext)}>
+            {t("连播 ")}{t(autoNext ? '开' : '关')}
+          </button>
           <button aria-pressed={autoCompat} disabled={qualityLoading || playbackSettingSaving}
             onClick={() => savePlaybackSetting('compat_mode', !autoCompat, setAutoCompat)}>
             {t("兼容模式")}
           </button>
           <button aria-pressed={autoDelete} disabled={qualityLoading || playbackSettingSaving}
-            onClick={() => autoDelete ? savePlaybackSetting('auto_delete_watched', false, setAutoDelete) : savePlaybackSetting('auto_delete_watched', true, setAutoDelete)}>
+            onClick={() => autoDelete ? savePlaybackSetting('auto_delete_watched', false, setAutoDelete) : setConfirmAsk({
+              title: '开启看完自动删除',
+              message: '看完一集后，将永久删除该集已下载的视频、在线播放缓存和转码缓存。需要时可重新下载。',
+              okText: '开启自动删除', danger: true,
+              onOk: () => savePlaybackSetting('auto_delete_watched', true, setAutoDelete),
+            })}>
             <Trash2 size={15} />{t("看完自动删")}
           </button>
-          <button onClick={() => openMergeDialog()} disabled={merging}>
-            {t(merging ? '提交中...' : '合并导出全集')}
-          </button>
-      </div>}
+      </div>
       {/* 4.3 顶部极简单行标题栏（与视口严格水平对齐） */}
-      <div className="player-top-clean-bar" hidden={actionsHidden || (mobile && controlsHidden)}>
+      <div className={`player-top-clean-bar ${controlsHidden ? 'controls-hidden' : ''}`} hidden={actionsHidden || (mobile && controlsHidden)}>
         <div className="player-bar-left">
           <div className="player-title-group">
             <span className="player-bar-title" title={detail ? detail.series_title : ''}>
@@ -2005,11 +2054,12 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             <button
               className={`btn-series-picker-tag series-picker-btn ${pickerOpen ? 'open' : ''}`}
               onClick={() => setPickerOpen(v => !v)}
-              title={t("切换其他剧集")}
+              title={t("切换剧集")}
+              aria-label={t("切换剧集")}
               aria-expanded={pickerOpen}
               style={{ display: seriesList.length > 1 ? undefined : 'none' }}
             >
-              <span>{seriesList.length}{t("部")}</span>
+              <span>{t("切换剧集")} {seriesList.length}{t("部")}</span>
               <ChevronDown size={12} />
             </button>
           </div>
@@ -2320,7 +2370,7 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
                             aria-label={t(`永久移除 ${s.series_title} 的剧库记录`)}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setConfirmAsk({ title: '从剧库移除', message: `确定将《${s.series_title}》从剧库移除吗？已下载的本地视频文件仍会保留。`, okText: '确认移除', danger: true, onOk: () => removeSeries(s.series_id, s.series_title) });
+                              setConfirmAsk({ title: '从剧库移除', message: `确定将《${s.series_title}》从剧库移除吗？已下载的本地视频文件仍会保留。`, okText: '永久移除', danger: true, onOk: () => removeSeries(s.series_id, s.series_title) });
                             }}
                           >
                             <X size={15} />
@@ -2780,7 +2830,13 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
 
               <button
                 className="btn btn-outline btn-xs"
-                onClick={() => onNavigate ? onNavigate('manager') : downloadToolsRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => {
+                  if (portrait) setEpisodesOpen(true);
+                  requestAnimationFrame(() => downloadToolsRef.current?.scrollIntoView({
+                    behavior: typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'instant' : 'smooth',
+                    block: 'center',
+                  }));
+                }}
                 title={t("前往下载管理")}
               >
                 {t("下载管理")}

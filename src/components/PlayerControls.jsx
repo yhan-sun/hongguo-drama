@@ -319,45 +319,6 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
         <time className="player-clock" dateTime={clock} aria-label={t(`当前时间 ${clock}`)}>{t(clock)}</time>
       </div>}
       <div ref={controlsRef} className="player-controls-bar">
-      <div
-        className="player-seek-container"
-        onMouseMove={(event) => {
-          if (!media.duration) return;
-          const rect = event.currentTarget.getBoundingClientRect();
-          if (rect.width <= 0) return;
-          const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-          setSeekHover({ visible: true, time: ratio * media.duration, x: event.clientX - rect.left });
-        }}
-        onMouseLeave={() => setSeekHover(s => s.visible ? { ...s, visible: false } : s)}
-      >
-        <div className="player-seek-track">
-          <div
-            className="player-seek-fill"
-            style={{ width: `${media.duration > 0 ? Math.min(100, Math.max(0, (media.time / media.duration) * 100)) : 0}%` }}
-          />
-          <div
-            className="player-seek-thumb"
-            style={{ left: `${media.duration > 0 ? Math.min(100, Math.max(0, (media.time / media.duration) * 100)) : 0}%` }}
-          />
-        </div>
-        {seekHover.visible && media.duration > 0 && (
-          <div className="player-seek-tooltip" style={{ left: seekHover.x }}>
-            {formatTime(seekHover.time)}
-          </div>
-        )}
-        <input
-          className="player-controls-seek"
-          type="range"
-          aria-label={t("播放进度")}
-          aria-valuetext={`${formatTime(media.time)} / ${formatTime(media.duration)}`}
-          min="0"
-          max={media.duration || 0}
-          step="0.1"
-          value={Math.min(media.time, media.duration)}
-          disabled={!available || !media.duration}
-          onChange={seek}
-        />
-      </div>
       <div className="player-controls-row">
         <button type="button" data-player-control aria-label={t(media.paused ? '播放' : '暂停')} title={t(`播放/暂停（${formatShortcut(shortcuts.play, t)}）`)} disabled={!available} onClick={togglePlay}>{media.paused ? <Play size={18} /> : <Pause size={18} />}</button>
         <button type="button" data-player-control aria-label={t("下一集")} title={t(`下一集（${formatShortcut(shortcuts.next, t)}）`)} disabled={!nextEpisode} onClick={() => nextEpisode && onEpisodeChange(nextEpisode.vid_index)}>
@@ -518,6 +479,45 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
             {!mobile && SHORTCUT_ACTIONS.map(action => <span key={action.id}>{t(formatShortcut(shortcuts[action.id], t))}：{t(action.label)}</span>)}
           </div>}
         </div>
+      </div>
+      <div
+        className="player-seek-container"
+        onMouseMove={(event) => {
+          if (!media.duration) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (rect.width <= 0) return;
+          const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+          setSeekHover({ visible: true, time: ratio * media.duration, x: event.clientX - rect.left });
+        }}
+        onMouseLeave={() => setSeekHover(s => s.visible ? { ...s, visible: false } : s)}
+      >
+        <div className="player-seek-track">
+          <div
+            className="player-seek-fill"
+            style={{ width: `${media.duration > 0 ? Math.min(100, Math.max(0, (media.time / media.duration) * 100)) : 0}%` }}
+          />
+          <div
+            className="player-seek-thumb"
+            style={{ left: `${media.duration > 0 ? Math.min(100, Math.max(0, (media.time / media.duration) * 100)) : 0}%` }}
+          />
+        </div>
+        {seekHover.visible && media.duration > 0 && (
+          <div className="player-seek-tooltip" style={{ left: seekHover.x }}>
+            {formatTime(seekHover.time)}
+          </div>
+        )}
+        <input
+          className="player-controls-seek"
+          type="range"
+          aria-label={t("播放进度")}
+          aria-valuetext={`${formatTime(media.time)} / ${formatTime(media.duration)}`}
+          min="0"
+          max={media.duration || 100}
+          step="0.1"
+          value={media.duration > 0 ? Math.min(media.time, media.duration) : 0}
+          disabled={!available || !media.duration}
+          onChange={seek}
+        />
       </div>
       </div>
     </div>

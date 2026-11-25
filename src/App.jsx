@@ -27,6 +27,7 @@ import { mediaSourceLabel } from './components/mediaSourcesModel.mjs';
 const EXPLORE_MENU = [
   { id: 'browse', label: '发现短剧', icon: Home },
   { id: 'feed', label: '热播榜单', icon: Flame },
+  { id: 'download', label: '搜索与下载', icon: Search },
 ];
 
 const MY_MENU = [
@@ -40,7 +41,6 @@ const ALL_PAGES = [
   ...EXPLORE_MENU,
   ...MY_MENU,
   { id: 'settings', label: '设置', icon: Settings },
-  { id: 'download', label: '搜索与下载', icon: Search },
 ];
 
 const CATALOG_CHANNEL_KEY = 'hongguo.catalog.channel.v1';
@@ -52,7 +52,7 @@ export default function App({ platformPages = {} }) {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [activeDownloads, setActiveDownloads] = useState(0);
   const [accountStatus, setAccountStatus] = useState(null);
-  const [themeMode, setThemeMode] = useState(() => document.documentElement?.dataset?.theme || 'light');
+  const [themeMode, setThemeMode] = useState(() => (typeof document !== 'undefined' ? document.documentElement?.dataset?.theme : null) || 'light');
 
   // 导航历史栈（用于前进/后退）
   const [historyStack, setHistoryStack] = useState(['browse']);
@@ -176,13 +176,13 @@ export default function App({ platformPages = {} }) {
         setSearchPopoverOpen(false);
       }
     };
-    document.addEventListener?.('mousedown', handleOutsideClick);
-    return () => document.removeEventListener?.('mousedown', handleOutsideClick);
+    if (typeof document !== 'undefined') document.addEventListener?.('mousedown', handleOutsideClick);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener?.('mousedown', handleOutsideClick); };
   }, []);
 
   // 监听正文滚动显示面包屑
   useEffect(() => {
-    const activeMain = document.querySelector?.(`.main-content[data-page="${page}"]`);
+    const activeMain = typeof document !== 'undefined' ? document.querySelector?.(`.main-content[data-page="${page}"]`) : null;
     if (!activeMain) return;
     const handleScroll = () => {
       setScrolledPastTitle(activeMain.scrollTop > 50);
@@ -469,6 +469,7 @@ export default function App({ platformPages = {} }) {
 
           <div className="sidebar-footer-actions">
             <button
+              key="settings"
               className={`sidebar-item sidebar-footer-btn ${page === 'settings' ? 'active' : ''}`}
               aria-current={page === 'settings' ? 'page' : undefined}
               onClick={() => navigate('settings')}

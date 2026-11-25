@@ -190,9 +190,9 @@ input::placeholder { color: var(--text-tertiary); }
 
 .main-content { flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 34px 36px 48px; }
 .main-content[data-page="player"] {
-  background: #16171c !important;
+  background: #090a0d !important;
   color: #f4f4f5 !important;
-  padding: 10px 16px 12px !important;
+  padding: 0 !important;
   height: calc(100vh - 48px) !important;
   max-height: calc(100vh - 48px) !important;
   overflow: hidden !important;
@@ -205,7 +205,43 @@ input::placeholder { color: var(--text-tertiary); }
 .app-storage-error { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 12px 24px; background: var(--danger-bg); color: var(--danger); }
 .app-storage-error span { min-width: 0; overflow-wrap: anywhere; }
 .browse-container, .hongguo-container, .dm-container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0; }
-.player-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; height: 100% !important; flex: 1 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+.player-container { position: relative !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; height: 100% !important; flex: 1 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+
+/* 播放页深色剧场沉浸联动：侧边栏与顶栏自动融入深色剧院风格，消除刺眼对比 */
+body:has(.main-content[data-page="player"]:not([hidden])) .sidebar {
+  background: #0f1015 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .sidebar-item {
+  color: #a1a1aa !important;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .sidebar-item.active {
+  background: rgba(255, 71, 87, 0.16) !important;
+  color: #ff6b81 !important;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .sidebar-brand {
+  color: #ffffff !important;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .window-toolbar {
+  background: #0f1015 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .window-toolbar .toolbar-title,
+body:has(.main-content[data-page="player"]:not([hidden])) .window-toolbar input,
+body:has(.main-content[data-page="player"]:not([hidden])) .window-toolbar button {
+  color: #f4f4f5 !important;
+}
+body:has(.main-content[data-page="player"]:not([hidden])) .window-toolbar input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
 .browse-container, .hongguo-container { max-width: none; }
 .settings-container { width: 100%; max-width: 840px; margin: 0 auto; }
 h2, .browse-title h2, .hero-text h2, .settings-header h2, .dm-title h2, .player-title h2 { color: var(--text-primary); font-size: 28px; line-height: 1.25; font-weight: 700; letter-spacing: -.035em; }
