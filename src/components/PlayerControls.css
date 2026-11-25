@@ -9,18 +9,18 @@
   position: absolute;
   inset: auto 0 0;
   pointer-events: auto;
-  padding: 18px 14px 9px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, .84));
+  padding: 24px 16px 12px;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.45) 40%, rgba(0, 0, 0, 0.88) 100%);
 }
 .player-controls-row { display: flex; align-items: center; gap: 8px; }
 .player-controls { transition: opacity .18s ease; }
 .player-controls.controls-hidden { opacity: 0; pointer-events: none; }
 .player-controls.controls-hidden .player-controls-bar { pointer-events: none; }
-.player-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 36px; min-height: 36px; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
-.player-controls button:hover { background: rgba(255, 255, 255, .16); }
+.player-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 34px; min-height: 34px; padding: 5px; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; transition: all 0.15s ease; }
+.player-controls button:hover { background: rgba(255, 255, 255, .16); transform: scale(1.04); }
 .player-controls button:disabled { opacity: .45; cursor: default; }
 .player-controls button:focus-visible, .player-controls input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.player-controls input[type="range"] { accent-color: var(--accent); cursor: pointer; }
+.player-controls input[type="range"] { accent-color: #ff4757; cursor: pointer; }
 .player-controls input:disabled { cursor: default; }
 .player-controls-seek { display: block; width: 100%; height: 18px; margin: 0 0 2px; }
 .player-controls-time { white-space: nowrap; font-size: 12px; font-variant-numeric: tabular-nums; }

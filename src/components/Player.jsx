@@ -2392,127 +2392,154 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           pictureMode={pictureMode} onPictureModeChange={changePictureMode} rate={playbackRate} onRateChange={changePlaybackRate} onError={showToast} />
         {!canPlay && (
           <div className={`player-placeholder${holdingFrame && !playbackError ? ' player-placeholder-over-frame' : ''}`} style={{ position: 'absolute', inset: 0, zIndex: 3 }}>
-            {t(playbackError ? (
-              <><Film size={34} /><p role="alert">{t(playbackError)}</p><div className="player-placeholder-actions">
-                <button className="btn btn-primary" onClick={retryUserPlayback}>{t(current?.status === 'completed' ? '重试本集' : '重试本集（在线播放）')}</button>
-                {!mobile && String(detail?.series_id) === String(activeSeriesId) && !fallbackRef.current?.submitting && canChooseLocal(current, String(activeSeriesId)) && <button className="btn btn-outline" onClick={chooseLocalPlayback}>{t("播放已有本地文件")}</button>}
-                {current?.vid && <button className="btn btn-outline" onClick={() => startOnlinePlay(currentIndex, undefined, true)}>{t("重新连接片源")}</button>}
-                {!mobile && current?.vid && !current.locked && (decodeFailed || current?.status === 'completed') && !fallbackRef.current?.submitting && <button className="btn btn-outline" onClick={() => startCompatPlay(currentIndex, true)}>{t("转码后播放")}</button>}
-              </div></>
-            ) : onlineProgress && onlineProgress.vid && (!current || current.vid === onlineProgress.vid) ? (
-              <>
-                <RefreshCw size={30} className="spin" />
-                <p>{t(onlineProgress.phase === 'preparing' ? '正在连接片源…' : onlineProgress.phase === 'queued' ? '等待其他视频转换完成…' : onlineProgress.phase === 'transcoding' ? '正在转换为可播放格式…' : onlineProgress.phase === 'decrypting' ? '正在准备播放…' : '正在缓冲在线播放…')}</p>
-                {!['preparing', 'queued'].includes(onlineProgress.phase) && <div className="player-wait-bar">
-                  <div className="player-wait-fill" style={{ width: `${onlineProgress.percent || 0}%` }} />
-                </div>}
-                <span className="player-placeholder-sub">
-                  {t(onlineProgress.phase === 'preparing' ? '获取可播放地址' : onlineProgress.phase === 'queued' ? '已排队，轮到本集后开始转换' : `${onlineProgress.percent || 0}%`)}
-                  {onlineProgress.total && !['transcoding', 'queued'].includes(onlineProgress.phase) ? ` · ${(onlineProgress.received / 1048576).toFixed(1)} / ${(onlineProgress.total / 1048576).toFixed(1)} MB` : ''}
-                  {onlineProgress.bytesPerSecond > 0 && onlineProgress.phase === 'downloading' ? ` · ${(onlineProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
-                  {t(' · 不写入下载目录')}
-                </span>
-                <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
-              </>
-            ) : mobile && localFileUrl && !localUrl ? (
-              <><RefreshCw size={30} className="spin" /><p>{t("正在读取本地视频…")}</p></>
-            ) : waitingFor != null ? (
-              <>
-                <RefreshCw size={30} className="spin" />
-                <p>{t("第 {0} 集正在下载，完成后自动播放…", [waitingFor])}</p>
-                {t((() => {
-                  const ep = episodes.find((e) => e.vid_index === waitingFor);
-                  return ep && ep.status === 'downloading' ? (
-                    <div className="player-wait-bar">
-                      <div className="player-wait-fill" style={{ width: `${ep.progress || 0}%` }} />
-                    </div>
-                  ) : null;
-                })())}
-                <span className="player-placeholder-sub">{t("下载完成后继续本集；取消等待不会停止下载")}</span>
-                <button className="btn btn-outline" onClick={() => stopPlayback('已取消等待，下载会继续；可在下载管理查看')}>{t("取消等待")}</button>
-              </>
-            ) : current?.locked || (episodes.length > 0 && episodes.every((ep) => ep.locked)) ? (
-              <><Film size={34} /><p>{t("需在来源平台解锁后观看")}</p><span className="player-placeholder-sub">{t("本应用不提供解锁")}</span></>
-            ) : !playbackRequested && current ? (
-              <><Film size={34} /><p>{t("第 {0} 集 · 等待播放", [current.vid_index])}</p>
-                <button className="btn btn-primary" onClick={() => goToEpisode(current.vid_index, pendingSeekRef.current)}>
-                  <Play size={15} />{t("播放本集")}</button>
-                <span className="player-placeholder-sub">{t("点击后继续观看，也可选择其他集数")}</span>
-              </>
-            ) : current ? (
-              <>
-                <Film size={34} />
-                <p>{t("第 {0} 集 · {1}", [current.vid_index, t(current.status === 'downloading' ? '正在下载' : current.status === 'pending' ? '排队中' : '尚未下载')])}
-                </p>
-                {current.status === 'downloading' && (
-                  <div className="player-wait-bar">
-                    <div className="player-wait-fill" style={{ width: `${current.progress || 0}%` }} />
+            <div className="player-placeholder-card">
+              {playbackError ? (
+                <>
+                  <div className="player-placeholder-icon-wrap"><Film size={30} /></div>
+                  <p role="alert">{t(playbackError)}</p>
+                  <div className="player-placeholder-actions">
+                    <button className="btn btn-primary" onClick={retryUserPlayback}>{t(current?.status === 'completed' ? '重试本集' : '重试本集（在线播放）')}</button>
+                    {!mobile && String(detail?.series_id) === String(activeSeriesId) && !fallbackRef.current?.submitting && canChooseLocal(current, String(activeSeriesId)) && <button className="btn btn-outline" onClick={chooseLocalPlayback}>{t("播放已有本地文件")}</button>}
+                    {current?.vid && <button className="btn btn-outline" onClick={() => startOnlinePlay(currentIndex, undefined, true)}>{t("重新连接片源")}</button>}
+                    {!mobile && current?.vid && !current.locked && (decodeFailed || current?.status === 'completed') && !fallbackRef.current?.submitting && <button className="btn btn-outline" onClick={() => startCompatPlay(currentIndex, true)}>{t("转码后播放")}</button>}
                   </div>
-                )}
-                <div className="player-placeholder-actions">
-                  <button className="btn btn-primary" onClick={() => startOnlinePlay(current.vid_index)}>
-                    <Play size={15} />{t("在线播放（不下载）")}</button>
-                  <button className="btn btn-outline" disabled={qualityLoading} onClick={() => downloadEpisode(current.vid_index)}>
-                    <Download size={15} />{t("下载本集")}</button>
-                </div>
-                <span className="player-placeholder-sub">{t("在线播放不保存到下载目录，准备产生的临时文件会自动清理")}</span>
-              </>
-            ) : (
-              <>
-                <Film size={34} />
-                <p>{t("请选择一集开始播放")}</p>
-              </>
-            ))}
+                </>
+              ) : onlineProgress && onlineProgress.vid && (!current || current.vid === onlineProgress.vid) ? (
+                <>
+                  <div className="player-placeholder-icon-wrap"><RefreshCw size={26} className="spin" /></div>
+                  <p>{t(onlineProgress.phase === 'preparing' ? '正在连接片源…' : onlineProgress.phase === 'queued' ? '等待其他视频转换完成…' : onlineProgress.phase === 'transcoding' ? '正在转换为可播放格式…' : onlineProgress.phase === 'decrypting' ? '正在准备播放…' : '正在缓冲在线播放…')}</p>
+                  {!['preparing', 'queued'].includes(onlineProgress.phase) && <div className="player-wait-bar">
+                    <div className="player-wait-fill" style={{ width: `${onlineProgress.percent || 0}%` }} />
+                  </div>}
+                  <span className="player-placeholder-sub">
+                    {t(onlineProgress.phase === 'preparing' ? '获取可播放地址' : onlineProgress.phase === 'queued' ? '已排队，轮到本集后开始转换' : `${onlineProgress.percent || 0}%`)}
+                    {onlineProgress.total && !['transcoding', 'queued'].includes(onlineProgress.phase) ? ` · ${(onlineProgress.received / 1048576).toFixed(1)} / ${(onlineProgress.total / 1048576).toFixed(1)} MB` : ''}
+                    {onlineProgress.bytesPerSecond > 0 && onlineProgress.phase === 'downloading' ? ` · ${(onlineProgress.bytesPerSecond / 1048576).toFixed(1)} MB/s` : ''}
+                    {t(' · 不写入下载目录')}
+                  </span>
+                  <div className="player-placeholder-actions">
+                    <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
+                  </div>
+                </>
+              ) : mobile && localFileUrl && !localUrl ? (
+                <><div className="player-placeholder-icon-wrap"><RefreshCw size={26} className="spin" /></div><p>{t("正在读取本地视频…")}</p></>
+              ) : waitingFor != null ? (
+                <>
+                  <div className="player-placeholder-icon-wrap"><RefreshCw size={26} className="spin" /></div>
+                  <p>{t("第 {0} 集正在下载，完成后自动播放…", [waitingFor])}</p>
+                  {(() => {
+                    const ep = episodes.find((e) => e.vid_index === waitingFor);
+                    return ep && ep.status === 'downloading' ? (
+                      <div className="player-wait-bar">
+                        <div className="player-wait-fill" style={{ width: `${ep.progress || 0}%` }} />
+                      </div>
+                    ) : null;
+                  })()}
+                  <span className="player-placeholder-sub">{t("下载完成后继续本集；取消等待不会停止下载")}</span>
+                  <div className="player-placeholder-actions">
+                    <button className="btn btn-outline" onClick={() => stopPlayback('已取消等待，下载会继续；可在下载管理查看')}>{t("取消等待")}</button>
+                  </div>
+                </>
+              ) : current?.locked || (episodes.length > 0 && episodes.every((ep) => ep.locked)) ? (
+                <><div className="player-placeholder-icon-wrap"><Film size={30} /></div><p>{t("需在来源平台解锁后观看")}</p><span className="player-placeholder-sub">{t("本应用不提供解锁")}</span></>
+              ) : !playbackRequested && current ? (
+                <>
+                  <div className="player-placeholder-icon-wrap"><Film size={30} /></div>
+                  <p>{t("第 {0} 集 · 等待播放", [current.vid_index])}</p>
+                  <div className="player-placeholder-actions">
+                    <button className="btn btn-primary" onClick={() => goToEpisode(current.vid_index, pendingSeekRef.current)}>
+                      <Play size={15} />{t("播放本集")}</button>
+                  </div>
+                  <span className="player-placeholder-sub">{t("点击后继续观看，也可选择其他集数")}</span>
+                </>
+              ) : current ? (
+                <>
+                  <div className="player-placeholder-icon-wrap"><Film size={30} /></div>
+                  <p>{t("第 {0} 集 · {1}", [current.vid_index, t(current.status === 'downloading' ? '正在下载' : current.status === 'pending' ? '排队中' : '尚未下载')])}
+                  </p>
+                  {current.status === 'downloading' && (
+                    <div className="player-wait-bar">
+                      <div className="player-wait-fill" style={{ width: `${current.progress || 0}%` }} />
+                    </div>
+                  )}
+                  <div className="player-placeholder-actions">
+                    <button className="btn btn-primary" onClick={() => startOnlinePlay(current.vid_index)}>
+                      <Play size={15} />{t("在线播放（不下载）")}</button>
+                    <button className="btn btn-outline" disabled={qualityLoading} onClick={() => downloadEpisode(current.vid_index)}>
+                      <Download size={15} />{t("下载本集")}</button>
+                  </div>
+                  <span className="player-placeholder-sub">{t("在线播放不保存到下载目录，准备产生的临时文件会自动清理")}</span>
+                </>
+              ) : (
+                <>
+                  <div className="player-placeholder-icon-wrap"><Film size={30} /></div>
+                  <p>{t("请选择一集开始播放")}</p>
+                </>
+              )}
+            </div>
           </div>
         )}
 
         {canPlay && holdingFrame && frameWaiting && !mediaBuffering && !compatProgress && !decodeFailed && (
           <div className="compat-overlay" role="status">
-            <Film size={26} />
-            <p>{t(softwareDecode && videoRef.current?.paused ? '已暂停，继续播放后显示新画面' : '正在等待新画面…')}</p>
-            <div className="player-placeholder-actions">
-              {softwareDecode && videoRef.current?.paused && <button className="btn btn-primary"
-                onClick={() => videoRef.current?.play().catch(() => showToast('暂时无法播放，请重试本集'))}>{t("继续播放")}</button>}
-              <button className="btn btn-outline" onClick={() => retryPlayback(!videoRef.current?.paused)}>{t("重新加载本集")}</button>
-              <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
+            <div className="player-placeholder-card">
+              <div className="player-placeholder-icon-wrap"><Film size={26} /></div>
+              <p>{t(softwareDecode && videoRef.current?.paused ? '已暂停，继续播放后显示新画面' : '正在等待新画面…')}</p>
+              <div className="player-placeholder-actions">
+                {softwareDecode && videoRef.current?.paused && <button className="btn btn-primary"
+                  onClick={() => videoRef.current?.play().catch(() => showToast('暂时无法播放，请重试本集'))}>{t("继续播放")}</button>}
+                <button className="btn btn-outline" onClick={() => retryPlayback(!videoRef.current?.paused)}>{t("重新加载本集")}</button>
+                <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
+              </div>
             </div>
           </div>
         )}
 
         {canPlay && mediaBuffering && !compatProgress && (
           <div className="compat-overlay" role="status">
-            <RefreshCw size={26} className="spin" /><p>{t("正在加载视频…")}</p>
-            <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
+            <div className="player-placeholder-card">
+              <div className="player-placeholder-icon-wrap"><RefreshCw size={26} className="spin" /></div>
+              <p>{t("正在加载视频…")}</p>
+              <div className="player-placeholder-actions">
+                <button className="btn btn-outline" onClick={() => stopPlayback()}>{t("取消播放")}</button>
+              </div>
+            </div>
           </div>
         )}
 
         {/* 兼容模式浮层：解码失败提示 / 转码进度 */}
         {compatProgress && compatProgress.vidIndex === currentIndex && (
           <div className="compat-overlay">
-            <RefreshCw size={26} className="spin" />
-            <p>{t("正在转码为兼容格式（H.264）…")}</p>
-            <div className="player-wait-bar">
-              <div className="player-wait-fill" style={{ width: `${compatProgress.percent || 0}%` }} />
+            <div className="player-placeholder-card">
+              <div className="player-placeholder-icon-wrap"><RefreshCw size={26} className="spin" /></div>
+              <p>{t("正在转码为兼容格式（H.264）…")}</p>
+              <div className="player-wait-bar">
+                <div className="player-wait-fill" style={{ width: `${compatProgress.percent || 0}%` }} />
+              </div>
+              <span className="compat-overlay-sub">
+                {compatProgress.percent || 0}{t("% · 正在处理当前视频，完成后切换到兼容片源")}</span>
+              <div className="player-placeholder-actions">
+                <button className="btn btn-outline" onClick={() => stopPlayback('转码已取消，可重试本集继续观看')}>{t("取消转码")}</button>
+              </div>
             </div>
-            <span className="compat-overlay-sub">
-              {compatProgress.percent || 0}{t("% · 正在处理当前视频，完成后切换到兼容片源")}</span>
-            <button className="btn btn-outline" onClick={() => stopPlayback('转码已取消，可重试本集继续观看')}>{t("取消转码")}</button>
           </div>
         )}
 
         {!compatProgress && decodeFailed && canPlay && (
           <div className="compat-overlay">
-            <Film size={30} />
-            <p>{t("当前片源暂时无法播放")}</p>
-            <span className="compat-overlay-sub" role={compatError ? 'alert' : undefined}>
-              {t(compatError || (mobile ? '请重新连接片源，或在设置中更换清晰度。' : '请先重新连接片源；若画面仍未正常显示，可尝试转码为兼容格式播放。'))}
-            </span>
-            <div className="player-placeholder-actions">
-              <button className="btn btn-primary" onClick={retryUserPlayback}>{t("重试本集")}</button>
-              <button className="btn btn-outline" onClick={() => startOnlinePlay(currentIndex, undefined, true)}>{t("重新连接片源")}</button>
-              {!mobile && <button className="btn btn-outline" onClick={() => startCompatPlay(currentIndex, true)}>
-                <Zap size={15} />{t("重新转码后播放")}</button>}
-              <button className="btn btn-outline" onClick={() => onNavigate?.('settings')}>{t("播放设置")}</button>
+            <div className="player-placeholder-card">
+              <div className="player-placeholder-icon-wrap"><Film size={30} /></div>
+              <p>{t("当前片源暂时无法播放")}</p>
+              <span className="compat-overlay-sub" role={compatError ? 'alert' : undefined}>
+                {t(compatError || (mobile ? '请重新连接片源，或在设置中更换清晰度。' : '请先重新连接片源；若画面仍未正常显示，可尝试转码为兼容格式播放。'))}
+              </span>
+              <div className="player-placeholder-actions">
+                <button className="btn btn-primary" onClick={retryUserPlayback}>{t("重试本集")}</button>
+                <button className="btn btn-outline" onClick={() => startOnlinePlay(currentIndex, undefined, true)}>{t("重新连接片源")}</button>
+                {!mobile && <button className="btn btn-outline" onClick={() => startCompatPlay(currentIndex, true)}>
+                  <Zap size={15} />{t("重新转码后播放")}</button>}
+                <button className="btn btn-outline" onClick={() => onNavigate?.('settings')}>{t("播放设置")}</button>
+              </div>
             </div>
           </div>
         )}
@@ -2601,7 +2628,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           <div className="player-now-compact">
             <span className="player-now-indicator" />
             <span className="player-now-text" title={current.title || ''}>
-              {t("正在播放：第 {0} 集", [current.vid_index])}{current.title ? ` · ${current.title}` : ''}
+              {t("正在播放：第 {0} 集", [current.vid_index])}
+              {current.title && !/^第\s*\d+\s*集$/i.test(current.title.trim()) && current.title.trim() !== `第${current.vid_index}集` ? ` · ${current.title}` : ''}
             </span>
             <span className={`player-now-badge status-${current.status}`}>
               {t(current.locked ? '锁定' : current.status === 'completed' ? '已缓存' : current.status === 'downloading' ? `下载中 ${current.progress || 0}%` : current.status === 'pending' ? '排队中' : '在线')}
