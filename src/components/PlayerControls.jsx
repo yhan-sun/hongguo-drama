@@ -13,7 +13,7 @@ const formatTime = seconds => {
 };
 const Icon = ({ children }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{t(children)}</svg>;
 
-export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAULT_SHORTCUTS, onToggleFullscreen, videoRef, stageRef, source, available, floating = false, onToggleFloating, continuing = false, autoContinue = false, rate, onRateChange, onError, pictureMode = 'fit', onPictureModeChange, portrait = false, windowFill = false, onWindowFill, seriesTitle = '', episodes = [], currentIndex, onEpisodeChange, onlineQuality = 'auto', supportsOnlineQuality = false, onQualityChange, onOpenSettings, episodesOpen = false, onOpenEpisodes, onOpenDownloads, cacheNext = false, autoNext = false, autoDelete = false, playbackSettingsBusy = false, onToggleCacheNext, onToggleAutoNext, onToggleAutoDelete, onControlsHiddenChange, decoderMode = 'auto', onDecoderChange, decoderBusy = false }) {
+export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAULT_SHORTCUTS, onToggleFullscreen, videoRef, stageRef, source, available, floating = false, onToggleFloating, continuing = false, autoContinue = false, rate, onRateChange, onError, pictureMode = 'fit', onPictureModeChange, portrait = false, windowFill = false, onWindowFill, seriesTitle = '', episodes = [], currentIndex, onEpisodeChange, onlineQuality = 'auto', supportsOnlineQuality = false, onQualityChange, onOpenSettings, episodesOpen = false, onOpenEpisodes, onOpenDownloads, cacheNext = false, autoNext = false, autoDelete = false, playbackSettingsBusy = false, onToggleCacheNext, onToggleAutoNext, onToggleAutoDelete, onControlsHiddenChange, decoderMode = 'auto', onDecoderChange, decoderBusy = false, onToggleDrawer, drawerCollapsed = false }) {
   useLanguage();
   const mobile = window.electronAPI?.platform === 'android';
   const controlsIdleMs = 1000;
@@ -346,7 +346,18 @@ export default function PlayerControls({ danmaku, enhancement, shortcuts = DEFAU
         </div>}
         <div className="player-controls-selection" data-player-menu ref={selectionRef}>
           {!!episodes.length && <button type="button" ref={episodeButtonRef} aria-label={t("选集")} aria-haspopup="dialog" aria-expanded={episodesOpen || selectionPanel === 'episodes'}
-            onClick={() => mobile && !fullscreen && onOpenEpisodes ? onOpenEpisodes() : toggleSelection('episodes')}>{t("选集")}</button>}
+            className={!drawerCollapsed ? 'player-controls-drawer-open' : ''}
+            onClick={() => {
+              if (fullscreen) {
+                toggleSelection('episodes');
+              } else if (onToggleDrawer) {
+                onToggleDrawer();
+              } else if (mobile && !fullscreen && onOpenEpisodes) {
+                onOpenEpisodes();
+              } else {
+                toggleSelection('episodes');
+              }
+            }}>{t("选集")}</button>}
           {!mobile && onQualityChange && <button type="button" ref={qualityButtonRef} aria-label={t("清晰度")} aria-haspopup="dialog" aria-expanded={selectionPanel === 'quality'}
             onClick={() => toggleSelection('quality')}>{t(onlineQuality === 'compat' ? (mobile ? '兼容' : '老电脑') : onlineQuality === 'auto' ? (media.width > 0 && media.height > 0 ? `${Math.min(media.width, media.height)}P` : '自动') : onlineQuality.toUpperCase())}</button>}
           {selectionPanel === 'episodes' && <div className="player-controls-popover player-episode-popover" role="dialog" aria-label={t("选集面板")} style={{ maxHeight: selectionHeight }}>

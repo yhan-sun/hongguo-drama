@@ -823,21 +823,23 @@
 .player-header-right .series-count { font-size: inherit; min-width: 0; padding: 0 .35em; }
 
 
-/* 4.3 顶部极简标题条（高 48px） */
+/* 4.3 顶部极简标题条（高 40px 单行对齐） */
 .player-top-clean-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
-  margin-bottom: 14px;
+  height: 40px;
+  min-height: 40px;
+  margin-bottom: 10px;
   padding: 0 12px;
-  gap: 12px;
-  background: rgba(20, 22, 28, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  gap: 10px;
+  background: rgba(22, 24, 30, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 .player-top-clean-bar[hidden] {
   display: none;
@@ -850,24 +852,26 @@
   flex: 1;
 }
 .player-back-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #d4d4d8;
-  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
-  flex-shrink: 0;
-  cursor: pointer;
+  display: none !important;
 }
-.player-back-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+.player-bar-cast-inline {
+  display: inline-flex;
+  align-items: center;
+}
+.player-bar-cast-inline .cast-panel > .btn {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 11.5px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #d4d4d8 !important;
+  border-radius: 8px !important;
+}
+.player-bar-cast-inline .cast-panel > .btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 .player-title-group {
   display: flex;
@@ -947,12 +951,17 @@
   background: rgba(217, 56, 58, 0.15);
   border-color: rgba(217, 56, 58, 0.35);
 }
+.player-action-btn.active-like {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.35);
+}
 .player-action-btn.active-cinema {
   color: #f59e0b;
   background: rgba(245, 158, 11, 0.15);
   border-color: rgba(245, 158, 11, 0.35);
 }
-.player-action-btn.active-wide {
+.player-action-btn.active-wide, .player-action-btn.active-collapsed {
   color: #D9383A;
   background: rgba(217, 56, 58, 0.15);
   border-color: rgba(217, 56, 58, 0.35);
@@ -1108,6 +1117,145 @@
 .player-container.episodes-collapsed .player-episode-panel,
 .player-episode-panel.collapsed {
   display: none !important;
+}
+
+/* 氛围光底层：高斯模糊微光，提升全屏与竖屏短剧沉浸感 */
+.player-ambient-backdrop {
+  position: absolute;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(52px) saturate(180%);
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 0;
+  transform: scale(1.15);
+  transition: opacity 0.4s ease;
+}
+body.cinema-mode .player-ambient-backdrop {
+  opacity: 0;
+}
+
+/* 抽屉顶部双 Tab 切换器：选集 | 剧评 */
+.drawer-tabs-header {
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+.drawer-tab-switcher {
+  display: flex;
+  background: rgba(0, 0, 0, 0.38);
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 3px;
+}
+.drawer-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.drawer-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.drawer-tab-btn.active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.drawer-tab-count {
+  font-size: 11px;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+.drawer-tab-content {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.drawer-episodes-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+.drawer-reviews-view {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  padding-right: 2px;
+  display: flex;
+  flex-direction: column;
+}
+.drawer-reviews-view .community-panel {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.drawer-reviews-view .community-heading {
+  margin-bottom: 12px;
+}
+.drawer-reviews-view .community-heading h3 {
+  font-size: 14px;
+}
+.drawer-reviews-view .community-heading p {
+  font-size: 11.5px;
+}
+.drawer-reviews-view .community-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.drawer-reviews-view .community-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+.drawer-reviews-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 16px;
+  color: #a1a1aa;
+  font-size: 12.5px;
+  text-align: center;
+}
+.drawer-reviews-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.batch-nas-wrapper {
+  padding: 6px 8px;
+}
+.batch-nas-wrapper .nas-download {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.batch-nas-wrapper .nas-download-description {
+  font-size: 11px;
+  color: #a1a1aa;
 }
 
 /* 选集抽屉内部 */
@@ -1315,32 +1463,35 @@
   border-color: rgba(251, 113, 133, 0.3);
 }
 
-/* 分页滑块 Tab */
+/* 分页滑块 Tab（紧凑自适应胶囊 Pills，横向平滑滚动） */
 .drawer-chunk-tabs {
   display: flex;
-  gap: 3px;
-  padding: 3px;
+  gap: 6px;
+  padding: 4px;
   background: rgba(0, 0, 0, 0.35);
-  border-radius: 10px;
+  border-radius: 9px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   overflow-x: auto;
   scrollbar-width: none;
+  flex-shrink: 0;
+  justify-content: flex-start;
 }
 .drawer-chunk-tabs::-webkit-scrollbar { display: none; }
 .drawer-chunk-tab {
   appearance: none;
   -webkit-appearance: none;
-  padding: 5px 10px;
-  font-size: 11.5px;
+  padding: 4px 10px;
+  font-size: 11px;
   font-weight: 500;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   border: none;
   color: #9496a1;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.14s ease;
-  flex: 1;
+  flex: 0 0 auto !important;
+  width: auto !important;
   text-align: center;
 }
 .drawer-chunk-tab:hover {
@@ -1348,7 +1499,7 @@
   background: rgba(255, 255, 255, 0.08);
 }
 .drawer-chunk-tab.active {
-  background: rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
   color: #ffffff !important;
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -1443,18 +1594,15 @@
 }
 .player-drawer-tips {
   font-size: 11px;
-  color: #71717a;
+  color: #a1a1aa !important;
   text-align: center;
   padding: 6px 0 2px;
   letter-spacing: 0.02em;
 }
 
-/* 底部操作与投屏 */
+/* 底部操作与投屏（已整合至顶部与右侧面板，隐藏底部多余条） */
 .player-footer {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: none !important;
 }
 .player-footer-tools {
   display: flex;

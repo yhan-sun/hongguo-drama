@@ -16,7 +16,7 @@ import NasDownload from './NasDownload';
 import CastPanel from './CastPanel';
 import VideoEnhancement, { useVideoEnhancement } from './VideoEnhancement';
 import './Player.css';
-import { Play, Film, Download, Check, RefreshCw, Layers, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Zap, ArrowLeft, Heart, Sun, Moon, Maximize2, PanelRightClose, Settings, Info } from './icons';
+import { Play, Film, Download, Check, RefreshCw, Layers, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Zap, ArrowLeft, Heart, Sun, Moon, Maximize2, PanelRightClose, PanelRightOpen, Settings, Info, ThumbsUp, Tv, Share2, Sparkles, MessageSquare } from './icons';
 import { readLocalLibrary, saveLocalSeries } from '../localLibrary.js';
 
 const localMediaKey = (seriesId, episode) => JSON.stringify([seriesId, episode?.vid, episode?.vid_index, episode?.fileUrl, episode?.fileSize, episode?.taskId]);
@@ -141,10 +141,21 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
   }, []);
 
   const [drawerCollapsed, setDrawerCollapsed] = useState(false);
+  const [drawerTab, setDrawerTab] = useState('episodes'); // 'episodes' | 'reviews'
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [batchDownloadOpen, setBatchDownloadOpen] = useState(false);
   const settingsRef = useRef(null);
   const batchDownloadRef = useRef(null);
+
+  const copyShareLink = useCallback(async () => {
+    if (!activeSeriesId) return;
+    try {
+      await navigator.clipboard.writeText(`https://hongguoduanju.com/detail?series_id=${encodeURIComponent(String(activeSeriesId))}`);
+      showToast('官方分享链接已复制到剪贴板');
+    } catch {
+      showToast('复制失败，请重试');
+    }
+  }, [activeSeriesId]);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -853,6 +864,42 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
     () => episodes.find((e) => e.vid_index === currentIndex) || null,
     [episodes, currentIndex]
   );
+
+  const currentVid = String(current?.vid || '');
+  const [episodeLiked, setEpisodeLiked] = useState(false);
+  useEffect(() => {
+    try {
+      const lib = readLocalLibrary();
+      const s = lib.items.find(it => String(it.id) === String(activeSeriesId));
+      setEpisodeLiked(!!currentVid && Array.isArray(s?.liked_episode_ids) && s.liked_episode_ids.includes(currentVid));
+    } catch {}
+  }, [activeSeriesId, currentVid]);
+
+  const toggleEpisodeLike = useCallback(() => {
+    if (!activeSeriesId) return;
+    if (!currentVid) {
+      showToast('当前未选集或暂无可点赞的分集');
+      return;
+    }
+    try {
+      const lib = readLocalLibrary();
+      const s = lib.items.find(it => String(it.id) === String(activeSeriesId));
+      const liked = Array.isArray(s?.liked_episode_ids) ? s.liked_episode_ids : [];
+      const nextLiked = episodeLiked
+        ? liked.filter(id => id !== currentVid)
+        : [...liked, currentVid];
+      saveLocalSeries({
+        id: String(activeSeriesId),
+        title: detail?.series_title || '',
+        cover: detail?.cover || '',
+        liked_episode_ids: nextLiked,
+      });
+      setEpisodeLiked(!episodeLiked);
+      showToast(episodeLiked ? '已取消小红心' : '已为本集点亮小红心 ♥');
+    } catch {
+      showToast('操作失败，请重试');
+    }
+  }, [activeSeriesId, currentVid, episodeLiked, detail]);
 
   const compatUrl = current ? compatMap[current.vid_index] : null;
   const isOnlinePlaying = onlineVid && current && current.vid === onlineVid && onlineUrl;
@@ -1918,17 +1965,9 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
             {t(merging ? '提交中...' : '合并导出全集')}
           </button>
       </div>}
-      {/* 4.3 顶部极简标题条（高 44px） */}
+      {/* 4.3 顶部极简单行标题栏（与视口严格水平对齐） */}
       <div className="player-top-clean-bar" hidden={actionsHidden || (mobile && controlsHidden)}>
         <div className="player-bar-left">
-          <button
-            className="icon-btn player-back-btn"
-            onClick={() => onNavigate ? onNavigate('browse') : window.history.back()}
-            title={t("返回")}
-            aria-label={t("返回")}
-          >
-            <ArrowLeft size={16} />
-          </button>
           <div className="player-title-group">
             <span className="player-bar-title" title={detail ? detail.series_title : ''}>
               {detail ? detail.series_title : t('短剧播放')}
@@ -1950,39 +1989,76 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         </div>
 
         <div className="player-bar-right">
-          {/* 收藏 */}
+          {/* 1. 收藏到本机 */}
           <button
             className={`icon-btn player-action-btn ${favorited ? 'active-fav' : ''}`}
             onClick={toggleFavorite}
-            title={t(favorited ? '已收藏（点击取消）' : '收藏短剧')}
-            aria-label={t(favorited ? '已收藏' : '收藏短剧')}
+            title={t(favorited ? '已收藏到本机（点击取消）' : '收藏到本机')}
+            aria-label={t(favorited ? '已收藏到本机' : '收藏到本机')}
           >
-            <Heart size={16} fill={favorited ? '#D9383A' : 'none'} color={favorited ? '#D9383A' : 'currentColor'} />
+            <Heart size={16} fill={favorited ? '#e11d48' : 'none'} color={favorited ? '#e11d48' : 'currentColor'} />
           </button>
 
-          {/* 影院暗场模式 */}
+          {/* 2. 本集小红心 */}
+          <button
+            className={`icon-btn player-action-btn ${episodeLiked ? 'active-like' : ''}`}
+            onClick={toggleEpisodeLike}
+            title={t(episodeLiked ? '已点赞本集（点击取消）' : '为本集点亮小红心')}
+            aria-label={t(episodeLiked ? '已点小红心' : '本集小红心')}
+          >
+            <ThumbsUp size={15} fill={episodeLiked ? '#f43f5e' : 'none'} color={episodeLiked ? '#f43f5e' : 'currentColor'} />
+          </button>
+
+          {/* 3. 查找下一季 */}
+          <button
+            className="icon-btn player-action-btn"
+            onClick={() => { setDrawerCollapsed(false); setDrawerTab('reviews'); }}
+            title={t("查找下一季 / 续作")}
+            aria-label={t("查找下一季")}
+          >
+            <Sparkles size={16} />
+          </button>
+
+          {/* 4. 投屏 */}
+          {!mobile && (
+            <div className="player-bar-cast-inline">
+              <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />
+            </div>
+          )}
+
+          {/* 5. 复制分享链接 */}
+          <button
+            className="icon-btn player-action-btn"
+            onClick={copyShareLink}
+            title={t("复制官方分享链接")}
+            aria-label={t("复制分享链接")}
+          >
+            <Share2 size={16} />
+          </button>
+
+          {/* 6. 沉浸聚焦模式 (影院模式 - 使用 Film 图标，严禁 Moon) */}
           <button
             className={`icon-btn player-action-btn ${cinemaMode ? 'active-cinema' : ''}`}
             onClick={() => setCinemaMode(v => !v)}
-            title={t(cinemaMode ? '退出影院暗场模式 (C)' : '影院暗场模式 (C)')}
-            aria-label={t(cinemaMode ? '退出影院模式' : '影院模式')}
+            title={t(cinemaMode ? '退出沉浸聚焦模式 (C)' : '沉浸聚焦模式 (C)')}
+            aria-label={t(cinemaMode ? '退出沉浸聚焦模式' : '沉浸聚焦模式')}
           >
-            {cinemaMode ? <Sun size={16} /> : <Moon size={16} />}
+            <Film size={16} />
           </button>
 
-          {/* 剧场宽屏（展开/收起选集） */}
+          {/* 7. 折叠/展开右侧面板 */}
           {!mobile && (
             <button
-              className={`icon-btn player-action-btn ${drawerCollapsed ? 'active-wide' : ''}`}
+              className={`icon-btn player-action-btn ${drawerCollapsed ? 'active-collapsed' : ''}`}
               onClick={() => setDrawerCollapsed(v => !v)}
-              title={t(drawerCollapsed ? '展开右侧选集' : '剧场宽屏（收起选集）')}
-              aria-label={t(drawerCollapsed ? '展开选集' : '剧场宽屏')}
+              title={t(drawerCollapsed ? '展开右侧面板' : '折叠右侧面板')}
+              aria-label={t(drawerCollapsed ? '展开面板' : '折叠面板')}
             >
-              <PanelRightClose size={16} />
+              {drawerCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
             </button>
           )}
 
-          {/* ⚙️ 播放设置 Popover */}
+          {/* 8. ⚙️ 播放设置 Popover */}
           {!mobile && (
             <div className="player-settings-container" ref={settingsRef}>
               <button
@@ -2271,6 +2347,12 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           clearTimeout(videoClickTimer.current);
           if (canPlay) return toggleFullscreen();
         }}>
+          {/* 氛围光底层：高斯模糊微光，提升全屏与竖屏短剧沉浸感 */}
+          <div
+            className="player-ambient-backdrop"
+            style={{ backgroundImage: detail?.cover ? `url("${detail.cover}")` : undefined }}
+            aria-hidden="true"
+          />
           {rateNotice !== null && <div className="player-rate-notice" role="status" aria-live="polite">{t(rateNotice)}×</div>}
           <VideoElement
             {...(softwareDecode ? { videoRef, onBeforeDestroy: () => persistPosition(true) } : { ref: videoRef })}
@@ -2389,7 +2471,8 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
           onControlsHiddenChange={setControlsHidden}
           decoderMode={fastConversion ? 'hardware' : softwareDecode ? 'software' : 'auto'} onDecoderChange={changeDecoder} decoderBusy={qualityLoading || playbackSettingSaving}
           onlineQuality={onlineQuality} supportsOnlineQuality={supportsOnlineQuality} onQualityChange={changeOnlineQuality}
-          pictureMode={pictureMode} onPictureModeChange={changePictureMode} rate={playbackRate} onRateChange={changePlaybackRate} onError={showToast} />
+          pictureMode={pictureMode} onPictureModeChange={changePictureMode} rate={playbackRate} onRateChange={changePlaybackRate} onError={showToast}
+          onToggleDrawer={() => setDrawerCollapsed(v => !v)} drawerCollapsed={drawerCollapsed} />
         {!canPlay && (
           <div className={`player-placeholder${holdingFrame && !playbackError ? ' player-placeholder-over-frame' : ''}`} style={{ position: 'absolute', inset: 0, zIndex: 3 }}>
             <div className="player-placeholder-card">
@@ -2546,183 +2629,201 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
       </div>, floatingPlayer.host))}
 
       {mobile && episodesOpen && <button className="mobile-episode-scrim" aria-label={t("关闭选集")} onClick={() => setEpisodesOpen(false)} />}
-      <section className={`player-episode-panel ${drawerCollapsed ? 'collapsed' : ''}`} id="player-episode-panel" ref={downloadToolsRef} aria-label={t("选集")} role={mobile && episodesOpen ? 'dialog' : undefined} aria-modal={mobile && episodesOpen ? true : undefined}>
-        {mobile && <div className="mobile-episode-head"><h3>{t("选集")}</h3><button className="btn btn-outline btn-sm" onClick={() => setEpisodesOpen(false)}>{t("关闭")}</button></div>}
+      <section className={`player-episode-panel ${drawerCollapsed ? 'collapsed' : ''}`} id="player-episode-panel" ref={downloadToolsRef} aria-label={t("选集与剧评")} role={mobile && episodesOpen ? 'dialog' : undefined} aria-modal={mobile && episodesOpen ? true : undefined}>
+        {mobile && <div className="mobile-episode-head"><h3>{t("选集与剧评")}</h3><button className="btn btn-outline btn-sm" onClick={() => setEpisodesOpen(false)}>{t("关闭")}</button></div>}
 
-        {/* 顶部操作行：当前已下载统计 + 批量下载 & 下载管理 */}
-        <div className="drawer-header-row">
-          <div className="drawer-stat">
-            <span className="drawer-stat-label">{t("已下载")}</span>
-            <span className="drawer-stat-value">{playableCount} / {episodes.length || 0}</span>
-          </div>
-
-          <div className="drawer-header-actions">
-            {!mobile && (
-              <div className="batch-download-container" ref={batchDownloadRef}>
-                <button
-                  className={`btn btn-outline btn-xs ${batchDownloadOpen ? 'active' : ''}`}
-                  onClick={() => setBatchDownloadOpen(v => !v)}
-                  title={t("批量下载与合并工具")}
-                  aria-expanded={batchDownloadOpen}
-                >
-                  <Download size={13} />
-                  <span>{t("批量下载")}</span>
-                  <ChevronDown size={11} />
-                </button>
-                {batchDownloadOpen && (
-                  <div className="batch-download-dropdown">
-                    <button className="batch-item" onClick={() => { downloadMissing(); setBatchDownloadOpen(false); }}>
-                      <Download size={13} />
-                      <span>{t("下载未完成集")}</span>
-                    </button>
-                    <button
-                      className="batch-item"
-                      disabled={qualityLoading || !current || followingDownload}
-                      onClick={() => { downloadFollowing(); setBatchDownloadOpen(false); }}
-                    >
-                      <Download size={13} />
-                      <span>{t(followingDownload ? '提交中…' : '从本集下载至末集')}</span>
-                    </button>
-                    <button
-                      className="batch-item"
-                      disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
-                      onClick={() => { downloadMissing(5); setBatchDownloadOpen(false); }}
-                    >
-                      <Download size={13} />
-                      <span>{t("下载后 5 集")}</span>
-                    </button>
-                    <button
-                      className="batch-item"
-                      disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
-                      onClick={() => { downloadMissing(10); setBatchDownloadOpen(false); }}
-                    >
-                      <Download size={13} />
-                      <span>{t("下载后 10 集")}</span>
-                    </button>
-                    <div className="batch-dropdown-divider" />
-                    <button
-                      className="batch-item batch-merge-item"
-                      disabled={merging || playableCount === 0}
-                      onClick={() => { openMergeDialog(); setBatchDownloadOpen(false); }}
-                    >
-                      <Layers size={13} />
-                      <span>{t(merging ? '提交中...' : '合并导出全集')}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
+        {/* 顶部双 Tab 分段切换器：选集 | 剧评 */}
+        <div className="drawer-tabs-header">
+          <div className="drawer-tab-switcher" role="tablist">
             <button
-              className="btn btn-outline btn-xs"
-              onClick={() => onNavigate ? onNavigate('manager') : downloadToolsRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              title={t("前往下载管理")}
+              role="tab"
+              aria-selected={drawerTab === 'episodes'}
+              className={`drawer-tab-btn ${drawerTab === 'episodes' ? 'active' : ''}`}
+              onClick={() => setDrawerTab('episodes')}
             >
-              {t("下载管理")}
+              <span>{t("选集")}</span>
+              <span className="drawer-tab-count">({episodes.length || 0})</span>
+            </button>
+            <button
+              role="tab"
+              aria-selected={drawerTab === 'reviews'}
+              className={`drawer-tab-btn ${drawerTab === 'reviews' ? 'active' : ''}`}
+              onClick={() => setDrawerTab('reviews')}
+            >
+              <span>{t("剧评")}</span>
             </button>
           </div>
         </div>
 
-        {/* 正在播放微信息 */}
-        {current && (
-          <div className="player-now-compact">
-            <span className="player-now-indicator" aria-hidden="true">
-              <span className="bar bar-1" />
-              <span className="bar bar-2" />
-              <span className="bar bar-3" />
-            </span>
-            <span className="player-now-text" title={current.title || ''}>
-              {t("正在播放：第 {0} 集", [current.vid_index])}
-              {current.title && !/^第\s*\d+\s*集$/i.test(current.title.trim()) && current.title.trim() !== `第${current.vid_index}集` ? ` · ${current.title}` : ''}
-            </span>
-            <span className={`player-now-badge status-${current.status}`}>
-              {t(current.locked ? '锁定' : current.status === 'completed' ? '已缓存' : current.status === 'downloading' ? `下载中 ${current.progress || 0}%` : current.status === 'pending' ? '排队中' : '在线')}
-            </span>
-          </div>
-        )}
+        {/* 选集 Tab 视图 */}
+        <div className="drawer-tab-content drawer-episodes-view" style={{ display: drawerTab === 'episodes' ? 'flex' : 'none' }}>
+          {/* 顶部操作行：当前已下载统计 + 批量下载 & 下载管理 */}
+          <div className="drawer-header-row">
+            <div className="drawer-stat">
+              <span className="drawer-stat-label">{t("已下载")}</span>
+              <span className="drawer-stat-value">{playableCount} / {episodes.length || 0}</span>
+            </div>
 
-        {/* 分页 Tab（超过 50 集展示） */}
-        {chunkCount > 1 && (
-          <div className="drawer-chunk-tabs" role="tablist">
-            {Array.from({ length: chunkCount }, (_, i) => {
-              const start = i * EPISODES_PER_CHUNK + 1;
-              const end = Math.min((i + 1) * EPISODES_PER_CHUNK, episodes.length);
-              const isActive = i === chunkIndex;
+            <div className="drawer-header-actions">
+              {!mobile && (
+                <div className="batch-download-container" ref={batchDownloadRef}>
+                  <button
+                    className={`btn btn-outline btn-xs ${batchDownloadOpen ? 'active' : ''}`}
+                    onClick={() => setBatchDownloadOpen(v => !v)}
+                    title={t("批量下载与合并工具")}
+                    aria-expanded={batchDownloadOpen}
+                  >
+                    <Download size={13} />
+                    <span>{t("批量下载")}</span>
+                    <ChevronDown size={11} />
+                  </button>
+                  {batchDownloadOpen && (
+                    <div className="batch-download-dropdown">
+                      <button className="batch-item" onClick={() => { downloadMissing(); setBatchDownloadOpen(false); }}>
+                        <Download size={13} />
+                        <span>{t("下载未完成集")}</span>
+                      </button>
+                      <button
+                        className="batch-item"
+                        disabled={qualityLoading || !current || followingDownload}
+                        onClick={() => { downloadFollowing(); setBatchDownloadOpen(false); }}
+                      >
+                        <Download size={13} />
+                        <span>{t(followingDownload ? '提交中…' : '从本集下载至末集')}</span>
+                      </button>
+                      <button
+                        className="batch-item"
+                        disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
+                        onClick={() => { downloadMissing(5); setBatchDownloadOpen(false); }}
+                      >
+                        <Download size={13} />
+                        <span>{t("下载后 5 集")}</span>
+                      </button>
+                      <button
+                        className="batch-item"
+                        disabled={qualityLoading || !current || !episodes.some(ep => ep.vid_index > current.vid_index)}
+                        onClick={() => { downloadMissing(10); setBatchDownloadOpen(false); }}
+                      >
+                        <Download size={13} />
+                        <span>{t("下载后 10 集")}</span>
+                      </button>
+                      <div className="batch-dropdown-divider" />
+                      <button
+                        className="batch-item batch-merge-item"
+                        disabled={merging || playableCount === 0}
+                        onClick={() => { openMergeDialog(); setBatchDownloadOpen(false); }}
+                      >
+                        <Layers size={13} />
+                        <span>{t(merging ? '提交中...' : '合并导出全集')}</span>
+                      </button>
+                      <div className="batch-dropdown-divider" />
+                      <div className="batch-nas-wrapper">
+                        <NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="btn btn-outline btn-xs"
+                onClick={() => onNavigate ? onNavigate('manager') : downloadToolsRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                title={t("前往下载管理")}
+              >
+                {t("下载管理")}
+              </button>
+            </div>
+          </div>
+
+          {/* 分页 Tab（超过 50 集展示，紧凑自适应胶囊 Pills） */}
+          {chunkCount > 1 && (
+            <div className="drawer-chunk-tabs" role="tablist">
+              {Array.from({ length: chunkCount }, (_, i) => {
+                const start = i * EPISODES_PER_CHUNK + 1;
+                const end = Math.min((i + 1) * EPISODES_PER_CHUNK, episodes.length);
+                const isActive = i === chunkIndex;
+                return (
+                  <button
+                    key={i}
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`drawer-chunk-tab ${isActive ? 'active' : ''}`}
+                    onClick={() => setChunkIndex(i)}
+                  >
+                    {start}-{end}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 5列紧凑数字宫格 */}
+          <div className="player-ep-grid-5col">
+            {visibleEpisodes.map((ep) => {
+              const isCurrent = ep.vid_index === currentIndex;
+              const isWatched = ep.vid_index < currentIndex;
               return (
                 <button
-                  key={i}
-                  role="tab"
-                  aria-selected={isActive}
-                  className={`drawer-chunk-tab ${isActive ? 'active' : ''}`}
-                  onClick={() => setChunkIndex(i)}
+                  key={ep.vid_index}
+                  disabled={ep.locked === true}
+                  aria-label={t(`第 ${ep.vid_index} 集`)}
+                  aria-pressed={isCurrent}
+                  className={`ep-chip-5col ep-${ep.status} ${isCurrent ? 'ep-current' : ''} ${isWatched ? 'ep-watched' : ''}`}
+                  onClick={() => {
+                    if (mobile) { goToEpisode(ep.vid_index); setEpisodesOpen(false); return; }
+                    clearTimeout(episodeClickTimer.current);
+                    episodeClickTimer.current = setTimeout(() => goToEpisode(ep.vid_index), 250);
+                  }}
+                  title={
+                    t(ep.locked ? '需在来源平台解锁' : ep.status === 'completed'
+                      ? `第 ${ep.vid_index} 集 · 点击播放（本地已缓存）`
+                      : ep.status === 'downloading' || ep.status === 'pending'
+                      ? `第 ${ep.vid_index} 集 · 下载中，点击在线播放`
+                      : `第 ${ep.vid_index} 集 · 点击在线播放 · 双击加入下载`)
+                  }
+                  onDoubleClick={() => {
+                    if (mobile || ep.status === 'completed') return;
+                    clearTimeout(episodeClickTimer.current);
+                    downloadEpisode(ep.vid_index);
+                  }}
                 >
-                  {start}-{end}
+                  <span className="ep-num">{ep.vid_index}</span>
+                  {ep.locked && <span className="ep-lock-mark" aria-hidden="true">🔒</span>}
+                  {ep.status === 'completed' && <Check size={10} className="ep-badge" />}
+                  {ep.status === 'downloading' && (
+                    <span className="ep-progress" style={{ width: `${ep.progress || 0}%` }} />
+                  )}
+                  {onlineVid === ep.vid && <span className="ep-online-dot" />}
                 </button>
               );
             })}
           </div>
-        )}
 
-        {/* 5列紧凑数字宫格 */}
-        <div className="player-ep-grid-5col">
-          {visibleEpisodes.map((ep) => {
-            const isCurrent = ep.vid_index === currentIndex;
-            const isWatched = ep.vid_index < currentIndex;
-            return (
-              <button
-                key={ep.vid_index}
-                disabled={ep.locked === true}
-                aria-label={t(`第 ${ep.vid_index} 集`)}
-                aria-pressed={isCurrent}
-                className={`ep-chip-5col ep-${ep.status} ${isCurrent ? 'ep-current' : ''} ${isWatched ? 'ep-watched' : ''}`}
-                onClick={() => {
-                  if (mobile) { goToEpisode(ep.vid_index); setEpisodesOpen(false); return; }
-                  clearTimeout(episodeClickTimer.current);
-                  episodeClickTimer.current = setTimeout(() => goToEpisode(ep.vid_index), 250);
-                }}
-                title={
-                  t(ep.locked ? '需在来源平台解锁' : ep.status === 'completed'
-                    ? `第 ${ep.vid_index} 集 · 点击播放（本地已缓存）`
-                    : ep.status === 'downloading' || ep.status === 'pending'
-                    ? `第 ${ep.vid_index} 集 · 下载中，点击在线播放`
-                    : `第 ${ep.vid_index} 集 · 点击在线播放 · 双击加入下载`)
-                }
-                onDoubleClick={() => {
-                  if (mobile || ep.status === 'completed') return;
-                  clearTimeout(episodeClickTimer.current);
-                  downloadEpisode(ep.vid_index);
-                }}
-              >
-                <span className="ep-num">{ep.vid_index}</span>
-                {ep.locked && <span className="ep-lock-mark" aria-hidden="true">🔒</span>}
-                {ep.status === 'completed' && <Check size={10} className="ep-badge" />}
-                {ep.status === 'downloading' && (
-                  <span className="ep-progress" style={{ width: `${ep.progress || 0}%` }} />
-                )}
-                {onlineVid === ep.vid && <span className="ep-online-dot" />}
-              </button>
-            );
-          })}
+          <div className="player-drawer-tips">
+            <span>{t("单击在线播放 · 双击加入下载")}</span>
+          </div>
         </div>
 
-        <div className="player-drawer-tips">
-          <span>{t("单击在线播放 · 双击加入下载")}</span>
+        {/* 剧评 Tab 视图（原生嵌入右侧抽屉，边看边刷） */}
+        <div className="drawer-tab-content drawer-reviews-view" style={{ display: drawerTab === 'reviews' ? 'flex' : 'none' }}>
+          {/^[0-9]{6,30}$/.test(String(activeSeriesId)) ? (
+            <CommunityPanel seriesId={activeSeriesId} episodeId={current?.vid} title={detail?.series_title || ''} cover={detail?.cover || ''}
+              trailingAction={<NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />}>
+              {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
+              <SequelFinder seriesId={activeSeriesId} active={active && !actionsHidden} />
+            </CommunityPanel>
+          ) : (
+            <div className="drawer-reviews-empty">
+              <p>{t("当前片源为自定义或第三方来源，暂无官方剧评数据。")}</p>
+              <div className="drawer-reviews-tools">
+                {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
+                <SequelFinder seriesId={activeSeriesId} active={active && !actionsHidden} />
+                <NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />
+              </div>
+            </div>
+          )}
         </div>
       </section>
-      </div>
-
-      <div className="player-footer" hidden={actionsHidden}>
-        {/^[0-9]{6,30}$/.test(String(activeSeriesId)) ? (
-          <CommunityPanel seriesId={activeSeriesId} episodeId={current?.vid} title={detail?.series_title || ''} cover={detail?.cover || ''}
-            trailingAction={<NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />}>
-            {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
-            <SequelFinder seriesId={activeSeriesId} active={active && !actionsHidden} />
-          </CommunityPanel>
-        ) : <div className="player-footer-tools">
-          {!mobile && <CastPanel seriesId={activeSeriesId} episode={current} title={detail?.series_title} videoRef={videoRef} />}
-          <SequelFinder seriesId={activeSeriesId} active={active && !actionsHidden} />
-          <NasDownload seriesId={activeSeriesId} quality={downloadQuality} disabled={qualityLoading} />
-        </div>}
       </div>
       {toast && <div className="dm-toast dm-toast-success" onClick={() => setToast(null)}>{t(toast)}</div>}
 

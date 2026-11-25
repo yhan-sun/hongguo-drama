@@ -478,3 +478,26 @@ export const PanelRightClose = (p) => (
   </svg>
 );
 
+export const PanelRightOpen = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M15 3v18" />
+    <path d="m11 9-3 3 3 3" />
+  </svg>
+);
+
+export const ThumbsUp = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <path d="M7 10v12" />
+    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3Z" />
+  </svg>
+);
+
+export const Tv = (p) => (
+  <svg {...baseProps(p.size, p.strokeWidth, p.className, p.style)}>
+    <rect width="20" height="15" x="2" y="7" rx="2" ry="2" />
+    <polyline points="17 2 12 7 7 2" />
+  </svg>
+);
+
+
