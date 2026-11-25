@@ -2626,7 +2626,11 @@ function Player({ target, onNavigate, onSeriesSelected, onFloatingChange, active
         {/* 正在播放微信息 */}
         {current && (
           <div className="player-now-compact">
-            <span className="player-now-indicator" />
+            <span className="player-now-indicator" aria-hidden="true">
+              <span className="bar bar-1" />
+              <span className="bar bar-2" />
+              <span className="bar bar-3" />
+            </span>
             <span className="player-now-text" title={current.title || ''}>
               {t("正在播放：第 {0} 集", [current.vid_index])}
               {current.title && !/^第\s*\d+\s*集$/i.test(current.title.trim()) && current.title.trim() !== `第${current.vid_index}集` ? ` · ${current.title}` : ''}
